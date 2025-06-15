@@ -31,16 +31,17 @@ export interface HistoricalSensorData {
 
 export interface AlertContent {
   id: string;
-  type: 'soilMoisture' | 'flame' | 'waterShortage' | 'prediction';
+  type: 'soilMoisture' | 'flame' | 'waterShortage'; // Removed 'prediction'
   title: string;
-  message: string; // This could be AI generated summary
+  message: string; 
   timestamp: number;
   severity: "critical" | "warning" | "info";
   sensorValue?: number | boolean; // Current value that triggered the alert
 }
 
-export interface PredictedIssue {
-  predictedIssue: string;
-  confidenceLevel: number;
-  suggestedAction: string;
-}
+// Removed PredictedIssue interface as it was AI-specific
+// export interface PredictedIssue {
+//   predictedIssue: string;
+//   confidenceLevel: number;
+//   suggestedAction: string;
+// }

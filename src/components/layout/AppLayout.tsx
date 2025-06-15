@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings, Bot } from 'lucide-react'; // Added Bot for AI section
+import { Home, Gauge, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
@@ -29,7 +29,6 @@ const navItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/sensors', label: 'Sensors Data', icon: Gauge },
   { href: '/devices', label: 'Devices', icon: Settings },
-  { href: '/ai-insights', label: 'AI Insights', icon: Bot },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

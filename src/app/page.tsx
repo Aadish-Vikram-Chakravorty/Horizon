@@ -2,12 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle, Bot } from 'lucide-react';
+import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { AlertContent, PredictedIssue, SensorReadings } from '@/types';
-import { generateAlertSummary } from '@/ai/flows/generate-alert-summary';
-import { predictPotentialIssues } from '@/ai/flows/predict-potential-issues';
+import type { AlertContent, SensorReadings } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -37,113 +35,46 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
 
 
 export default function HomePage() {
-  const { appData, historicalData, loading, error } = useFirebaseData();
+  const { appData, loading, error } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
-  const [predictions, setPredictions] = useState<PredictedIssue[]>([]);
-  const [isAiProcessing, setIsAiProcessing] = useState(false);
 
   useEffect(() => {
-    if (appData?.sensors && !isAiProcessing) {
-      const processAlerts = async () => {
-        setIsAiProcessing(true);
+    if (appData?.sensors) {
+      const processAlerts = () => {
         const newAlerts: AlertContent[] = [];
         const currentSensors = appData.sensors;
 
         // Soil Moisture Alert
         if (currentSensors.soilMoisture < 10) {
-          try {
-            const summary = await generateAlertSummary({
-              sensorType: 'Soil Moisture',
-              sensorValue: currentSensors.soilMoisture,
-              threshold: 10,
-              historicalData: JSON.stringify(historicalData?.soilMoisture || []),
-            });
-            newAlerts.push({
-              id: 'soilMoistureLow',
-              type: 'soilMoisture',
-              title: 'Low Soil Moisture!',
-              message: summary.summary,
-              timestamp: Date.now(),
-              severity: 'warning',
-              sensorValue: currentSensors.soilMoisture,
-            });
-          } catch (e) {
-            console.error("Error generating soil moisture alert summary:", e);
-            newAlerts.push({
-              id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!', 
-              message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Water your plants.`,
-              timestamp: Date.now(), severity: 'warning', sensorValue: currentSensors.soilMoisture
-            });
-          }
+          newAlerts.push({
+            id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
+            message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Water your plants.`,
+            timestamp: Date.now(), severity: 'warning', sensorValue: currentSensors.soilMoisture
+          });
         }
 
         // Flame Detection Alert
         if (currentSensors.flameDetected) {
-           try {
-            const summary = await generateAlertSummary({
-              sensorType: 'Flame Sensor',
-              sensorValue: 1, // 1 for true
-              threshold: 0, // 0 for false
-              historicalData: JSON.stringify(historicalData?.flameDetected || []), // Assuming you might log this
-            });
-            newAlerts.push({
-              id: 'flameDetected', type: 'flame', title: 'Flame Detected!',
-              message: summary.summary, timestamp: Date.now(), severity: 'critical', sensorValue: true
-            });
-          } catch (e) {
-             console.error("Error generating flame alert summary:", e);
-             newAlerts.push({
-              id: 'flameDetected_fallback', type: 'flame', title: 'Flame Detected!',
-              message: 'A flame has been detected! Take immediate action.',
-              timestamp: Date.now(), severity: 'critical', sensorValue: true
-            });
-          }
+           newAlerts.push({
+            id: 'flameDetected_fallback', type: 'flame', title: 'Flame Detected!',
+            message: 'A flame has been detected! Take immediate action.',
+            timestamp: Date.now(), severity: 'critical', sensorValue: true
+          });
         }
         
         // Water Shortage Alert
         if (currentSensors.waterShortage) {
-          try {
-            const summary = await generateAlertSummary({
-              sensorType: 'Water Supply',
-              sensorValue: 1, // 1 for true (shortage)
-              threshold: 0, // 0 for false (no shortage)
-              historicalData: "No specific historical data format for boolean water shortage.",
-            });
-             newAlerts.push({
-              id: 'waterShortage', type: 'waterShortage', title: 'Water Shortage!',
-              message: summary.summary, timestamp: Date.now(), severity: 'critical', sensorValue: true
-            });
-          } catch (e) {
-            console.error("Error generating water shortage alert summary:", e);
-            newAlerts.push({
-              id: 'waterShortage_fallback', type: 'waterShortage', title: 'Water Shortage!',
-              message: 'Water supply is critically low. Check your main water source.',
-              timestamp: Date.now(), severity: 'critical', sensorValue: true
-            });
-          }
+          newAlerts.push({
+            id: 'waterShortage_fallback', type: 'waterShortage', title: 'Water Shortage!',
+            message: 'Water supply is critically low. Check your main water source.',
+            timestamp: Date.now(), severity: 'critical', sensorValue: true
+          });
         }
         setAlerts(newAlerts);
-
-        // Potential Issue Prediction (Example: Soil Moisture Trend)
-        if (historicalData?.soilMoisture && historicalData.soilMoisture.length > 2) {
-          try {
-            const prediction = await predictPotentialIssues({
-              historicalSensorData: JSON.stringify(historicalData.soilMoisture),
-              sensorType: 'Soil Moisture',
-            });
-            if (prediction.predictedIssue && prediction.confidenceLevel > 0.5) { // Only show reasonably confident predictions
-              setPredictions([prediction]);
-            }
-          } catch (e) {
-            console.error("Error predicting potential issues:", e);
-          }
-        }
-        setIsAiProcessing(false);
       };
       processAlerts();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appData, historicalData]); // Removed isAiProcessing from deps to avoid loop
+  }, [appData]);
 
   if (loading) {
     return (
@@ -187,10 +118,10 @@ export default function HomePage() {
         <h1 className="text-3xl font-bold font-headline text-primary mb-6">Dashboard</h1>
       
         {/* Alerts Section */}
-        {(alerts.length > 0 || predictions.length > 0) && (
+        {alerts.length > 0 && (
           <motion.section variants={itemVariants}>
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
-              <ShieldAlert /> Important Alerts & Predictions
+              <ShieldAlert /> Important Alerts
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {alerts.map(alert => (
@@ -208,22 +139,7 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
               ))}
-              {predictions.map((pred, idx) => (
-                 <Card key={`pred-${idx}`} className="border-l-4 border-accent">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg text-accent-foreground">
-                      <Bot /> AI Prediction
-                    </CardTitle>
-                     <CardDescription>Confidence: {(pred.confidenceLevel * 100).toFixed(0)}%</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-medium">{pred.predictedIssue}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Suggestion: {pred.suggestedAction}</p>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
-             {isAiProcessing && <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><LoadingSpinner size={16}/> Processing AI insights...</div>}
           </motion.section>
         )}
 
