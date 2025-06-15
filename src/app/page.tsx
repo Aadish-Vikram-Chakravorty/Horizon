@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -178,7 +179,7 @@ export default function HomePage() {
               <CardContent>
                 <p className="text-xl">Status: <span className="font-semibold capitalize">{devices.light1}</span></p>
                 <Progress value={devices.light1 === "on" ? 100 : devices.light1 === "auto" ? 50 : 0} className="mt-2 h-2" />
-                <Link href="/devices" passHref>
+                <Link href="/devices">
                   <Button variant="outline" size="sm" className="mt-4">Manage</Button>
                 </Link>
               </CardContent>
@@ -192,7 +193,7 @@ export default function HomePage() {
               <CardContent>
                 <p className="text-xl">Status: <span className="font-semibold capitalize">{devices.lightLDR}</span></p>
                  <Progress value={devices.lightLDR === "on" ? 100 : devices.lightLDR === "auto" ? 50 : 0} className="mt-2 h-2" />
-                <Link href="/devices" passHref>
+                <Link href="/devices">
                   <Button variant="outline" size="sm" className="mt-4">Manage</Button>
                 </Link>
               </CardContent>
