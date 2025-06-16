@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle, Zap, CalendarDays, Wifi, WifiOff } from 'lucide-react';
+import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle, Zap, CalendarDays, Wifi, WifiOff, BedDouble } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
@@ -38,14 +38,7 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
 export default function HomePage() {
   const { appData, loading, error } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
-  const [currentDateString, setCurrentDateString] = useState<string>('');
-
-  useEffect(() => {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    setCurrentDateString(now.toLocaleDateString(undefined, options));
-  }, []);
-
+  
   useEffect(() => {
     if (appData?.sensors) {
       const processAlerts = () => {
@@ -112,12 +105,14 @@ export default function HomePage() {
   let onlineDevicesCount = 0;
   if (devices) {
     mainDeviceKeys.forEach(key => {
-      if (devices[key] && devices[key] !== 'off') {
+      // Consider a device "online" if its status is not "off".
+      // For ldrIntensity, it's a number, so we don't count it as a device status for online/offline count.
+      if (key !== 'ldrIntensity' && devices[key] && devices[key] !== 'off') {
         onlineDevicesCount++;
       }
     });
   }
-  const allSystemsOnline = mainDeviceKeys.length > 0 && onlineDevicesCount === mainDeviceKeys.length;
+  const allSystemsOnline = mainDeviceKeys.filter(key => key !== 'ldrIntensity').length > 0 && onlineDevicesCount === mainDeviceKeys.filter(key => key !== 'ldrIntensity').length;
 
 
   const cardVariants = {
@@ -147,13 +142,8 @@ export default function HomePage() {
             ) : (
               <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                 <WifiOff size={20} />
-                <span className="font-semibold">{onlineDevicesCount} of {mainDeviceKeys.length} devices online</span>
+                <span className="font-semibold">{onlineDevicesCount} of {mainDeviceKeys.filter(key => key !== 'ldrIntensity').length} devices online</span>
               </div>
-            )}
-            {currentDateString && (
-              <p className="text-sm text-muted-foreground mt-1 flex items-center justify-end gap-2">
-                <CalendarDays size={16}/> {currentDateString}
-              </p>
             )}
           </div>
         </motion.div>
@@ -241,7 +231,7 @@ export default function HomePage() {
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                   <Lightbulb className={devices.light2 !== "off" ? "text-yellow-400" : ""} /> Bedroom Light
+                   <BedDouble className={devices.light2 !== "off" ? "text-yellow-400" : ""} /> Bedroom Light
                 </CardTitle>
               </CardHeader>
               <CardContent>

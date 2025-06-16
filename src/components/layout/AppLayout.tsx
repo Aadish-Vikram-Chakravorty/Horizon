@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings, Menu } from 'lucide-react'; // Added Menu for explicit trigger
+import { Home, Gauge, Settings, Menu, CalendarDays, Bot } from 'lucide-react'; // Added Bot
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
@@ -34,6 +34,13 @@ const navItems: NavItem[] = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [currentDateString, setCurrentDateString] = useState<string>('');
+
+  useEffect(() => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+    setCurrentDateString(now.toLocaleDateString(undefined, options));
+  }, []);
 
   return (
     <SidebarProvider defaultOpen>
@@ -61,20 +68,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 mt-auto">
-          {/* ThemeToggle moved to main header, keeping this structure if other footer items are needed later */}
            <div className="hidden group-data-[collapsible=icon]:block mx-auto">
-             {/* Can add a compact element here if needed when collapsed */}
            </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-lg px-4 sm:px-6 py-4">
           <SidebarTrigger>
-            <Menu className="h-6 w-6" /> {/* Using Menu icon for clarity */}
+            <Menu className="h-6 w-6" />
           </SidebarTrigger>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            {/* Other header items can go here, e.g., user profile */}
+            {currentDateString && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CalendarDays size={16}/> {currentDateString}
+              </div>
+            )}
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">
