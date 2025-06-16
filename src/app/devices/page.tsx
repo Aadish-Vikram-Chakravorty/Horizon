@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -5,7 +6,7 @@ import LightControl from '@/components/devices/LightControl';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Card, CardContent, CardHeader, CardTitle }  from '@/components/ui/card';
-import { Lightbulb, Zap, AlertTriangle } from 'lucide-react';
+import { Lightbulb, Zap, AlertTriangle, BedDouble } from 'lucide-react'; // Added BedDouble for Bedroom Light
 import { motion } from 'framer-motion';
 
 export default function DevicesPage() {
@@ -50,7 +51,7 @@ export default function DevicesPage() {
       <h1 className="text-3xl font-bold font-headline text-primary mb-8">Device Management</h1>
       {appData.devices ? (
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" // Adjusted grid for 3 items
           variants={containerVariants}
           initial="hidden"
           animate="visible"
@@ -59,11 +60,19 @@ export default function DevicesPage() {
             lightId="light1"
             displayName="Living Room Light"
             icon={Lightbulb}
+            showAutoOption={false} // Do not show "auto" for Living Room Light
           />
           <LightControl
             lightId="lightLDR"
             displayName="LDR Smart Light"
-            icon={Zap} // Or a specific LDR light icon if available
+            icon={Zap} 
+            showAutoOption={true} // LDR light can have "auto"
+          />
+          <LightControl
+            lightId="light2" // Assuming 'light2' is the ID in Firebase and types
+            displayName="Bedroom Light" 
+            icon={BedDouble} // Example icon
+            showAutoOption={true} // Assuming bedroom light can also be auto
           />
         </motion.div>
       ) : (

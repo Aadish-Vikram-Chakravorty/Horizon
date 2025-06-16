@@ -1,3 +1,4 @@
+
 export interface SensorReadings {
   ldrBrightness: number; // e.g., 0-1023 or lux value
   humidity: number; // 0-100 %
@@ -12,7 +13,9 @@ export type LightStatus = "on" | "off" | "auto";
 
 export interface DeviceControls {
   light1: LightStatus;
-  lightLDR: LightStatus; // Assuming the LDR light is the second light
+  lightLDR: LightStatus;
+  light2: LightStatus; // Added third light
+  ldrIntensity?: number; // Optional: For LDR light intensity (0-100)
 }
 
 export interface AppData {
@@ -31,17 +34,10 @@ export interface HistoricalSensorData {
 
 export interface AlertContent {
   id: string;
-  type: 'soilMoisture' | 'flame' | 'waterShortage'; // Removed 'prediction'
+  type: 'soilMoisture' | 'flame' | 'waterShortage';
   title: string;
-  message: string; 
+  message: string;
   timestamp: number;
   severity: "critical" | "warning" | "info";
-  sensorValue?: number | boolean; // Current value that triggered the alert
+  sensorValue?: number | boolean;
 }
-
-// Removed PredictedIssue interface as it was AI-specific
-// export interface PredictedIssue {
-//   predictedIssue: string;
-//   confidenceLevel: number;
-//   suggestedAction: string;
-// }

@@ -1,10 +1,11 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ref, onValue, set, DatabaseReference } from 'firebase/database';
 import { database } from '@/lib/firebase';
-import type { AppData, SensorReadings, DeviceControls, LightStatus, HistoricalSensorData } from '@/types';
+import type { AppData, DeviceControls, LightStatus, HistoricalSensorData } from '@/types';
 
 interface FirebaseContextType {
   appData: AppData | null;
@@ -12,6 +13,7 @@ interface FirebaseContextType {
   loading: boolean;
   error: Error | null;
   updateLightStatus: (lightId: keyof DeviceControls, status: LightStatus) => Promise<void>;
+  updateLDRIntensity: (intensity: number) => Promise<void>;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
@@ -29,6 +31,8 @@ const initialAppData: AppData = {
   devices: {
     light1: "off",
     lightLDR: "off",
+    light2: "off", // Added third light
+    ldrIntensity: 50, // Default LDR intensity
   },
 };
 
@@ -49,7 +53,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
         if (data) {
           setAppData(prevData => ({
             sensors: data.sensors || prevData?.sensors || initialAppData.sensors,
-            devices: data.devices || prevData?.devices || initialAppData.devices,
+            devices: {
+              ...initialAppData.devices, // Start with defaults for all device properties
+              ...(prevData?.devices),    // Spread previous device states
+              ...(data.devices),         // Spread fetched device states (overwrites previous for fetched keys)
+            }
           }));
         } else {
            setAppData(initialAppData); // Set to initial if no data
@@ -73,7 +81,6 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
       },
       (err) => {
         console.error("Firebase read error (historicalData):", err);
-        // Not critical if historical data fails for basic ops
       }
     );
     
@@ -85,17 +92,30 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLightStatus = async (lightId: keyof DeviceControls, status: LightStatus) => {
     try {
+      // Ensure we are not trying to set ldrIntensity via this function
+      if (lightId === 'ldrIntensity') return; 
       const lightRef: DatabaseReference = ref(database, `currentReadings/devices/${lightId}`);
       await set(lightRef, status);
     } catch (err) {
-      console.error("Firebase write error:", err);
-      setError(err as Error); // Or use toast to show error
-      throw err; // Re-throw for component handling
+      console.error("Firebase write error (light status):", err);
+      setError(err as Error); 
+      throw err;
+    }
+  };
+
+  const updateLDRIntensity = async (intensity: number) => {
+    try {
+      const intensityRef: DatabaseReference = ref(database, `currentReadings/devices/ldrIntensity`);
+      await set(intensityRef, intensity);
+    } catch (err) {
+      console.error("Firebase write error (LDR intensity):", err);
+      setError(err as Error);
+      throw err;
     }
   };
 
   return (
-    <FirebaseContext.Provider value={{ appData, historicalData, loading, error, updateLightStatus }}>
+    <FirebaseContext.Provider value={{ appData, historicalData, loading, error, updateLightStatus, updateLDRIntensity }}>
       {children}
     </FirebaseContext.Provider>
   );
