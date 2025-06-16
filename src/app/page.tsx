@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle, Leaf } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
@@ -59,7 +59,7 @@ export default function HomePage() {
           newAlerts.push({
             id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
             message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Immediate watering needed.`,
-            timestamp: Date.now(), severity: 'critical', sensorValue: currentSensors.soilMoisture
+            timestamp: Date.now(), severity: 'critical',
           });
         }
 
@@ -67,7 +67,7 @@ export default function HomePage() {
            newAlerts.push({
             id: 'flameDetected_fallback', type: 'flame', title: 'Flame Detected!',
             message: 'A flame has been detected! Take immediate action.',
-            timestamp: Date.now(), severity: 'critical', sensorValue: true
+            timestamp: Date.now(), severity: 'critical',
           });
         }
         
@@ -75,7 +75,7 @@ export default function HomePage() {
           newAlerts.push({
             id: 'waterShortage_fallback', type: 'waterShortage', title: 'Water Shortage!',
             message: 'Water supply is critically low. Check your main water source.',
-            timestamp: Date.now(), severity: 'critical', sensorValue: true
+            timestamp: Date.now(), severity: 'critical',
           });
         }
         setAlerts(newAlerts.sort((a, b) => b.timestamp - a.timestamp)); // Sort by most recent
