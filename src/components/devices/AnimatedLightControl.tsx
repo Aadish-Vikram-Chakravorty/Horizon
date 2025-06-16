@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Icon as LucideIcon } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
-import type { LightStatus, DeviceControls } from '@/types';
+import type { LightStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface AnimatedLightControlProps {
@@ -57,7 +57,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     },
     loading: {
       scale: [1, 1.05, 1],
-      transition: { repeat: Infinity, duration: 0.8 }
+      transition: { repeat: Infinity, duration: 0.8, ease: "easeInOut" }
     }
   };
 
@@ -76,7 +76,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     },
     loading: {
       scale: [1, 1.05, 1],
-      transition: { repeat: Infinity, duration: 0.8 }
+      transition: { repeat: Infinity, duration: 0.8, ease: "easeInOut" }
     }
   };
 
@@ -86,9 +86,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       opacity: 1,
       scaleY: 1,
       y: 0,
-      transition: { delay: i * 0.025, duration: 0.18, ease: "easeOut" },
+      transition: { delay: i * 0.02, duration: 0.15, ease: "easeOut" },
     }),
-    exit: { opacity: 0, scaleY: 0, y: 8, transition: { duration: 0.15 } },
+    exit: { opacity: 0, scaleY: 0, y: 8, transition: { duration: 0.12 } },
   };
 
   const getBulbAnimationState = () => {
@@ -123,15 +123,16 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
         {/* Light Bulb shape */}
         <motion.div
           className="relative w-12 h-12 rounded-full border-2"
-          variants={bulbVariants}
+          // Use a simpler duration-based transition for potentially snappier feel
+          transition={{ duration: 0.2, ease: "circOut" }}
           animate={getBulbAnimationState()}
-          transition={{ type: "spring", stiffness: 300, damping: 15 }}
         >
           <div className="dark:hidden">
             <motion.div
               className="w-full h-full rounded-full"
               variants={bulbVariants}
               animate={getBulbAnimationState()}
+              transition={{ duration: 0.2, ease: "circOut" }}
             />
           </div>
           <div className="hidden dark:block">
@@ -139,6 +140,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
               className="w-full h-full rounded-full"
               variants={darkBulbVariants}
               animate={getBulbAnimationState()}
+              transition={{ duration: 0.2, ease: "circOut" }}
             />
           </div>
           <AnimatePresence>

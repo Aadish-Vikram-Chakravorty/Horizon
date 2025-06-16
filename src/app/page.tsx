@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AnimatedLightControl from '@/components/devices/AnimatedLightControl';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui/label'; // Label was already imported
+import { cn } from '@/lib/utils';
+
 
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
   switch (key) {
@@ -105,7 +107,18 @@ export default function HomePage() {
   };
   
   const handleLDRSwitchChange = (checked: boolean) => {
+    // This function is called when the switch is toggled.
+    // It should set the light to 'on' if checked, or 'off' if unchecked.
+    // It should not set to 'auto'.
     handleLDRLightUpdate(checked ? 'on' : 'off');
+  };
+
+  const handleLDRAutoToggle = () => {
+    if (devices?.lightLDR === 'auto') {
+      handleLDRLightUpdate('off'); // Turn off when disabling auto
+    } else {
+      handleLDRLightUpdate('auto'); // Turn on auto
+    }
   };
 
 
@@ -144,7 +157,8 @@ export default function HomePage() {
     mainDeviceKeys.forEach(key => {
       if (key !== 'ldrIntensity') { 
         const deviceStatus = devices[key];
-        const isOnline = deviceStatus && (typeof deviceStatus === 'string' && deviceStatus !== 'off');
+        // A device is online if its status is 'on' or 'auto'
+        const isOnline = deviceStatus && (deviceStatus === 'on' || deviceStatus === 'auto');
         if (isOnline) {
           onlineDevicesCount++;
         }
@@ -159,7 +173,7 @@ export default function HomePage() {
     });
   }
   
-  const onlineDeviceItems = deviceList.filter(device => device.status && (typeof device.status === 'string' && device.status !== 'off'));
+  const onlineDeviceItems = deviceList.filter(device => device.status && (device.status === 'on' || device.status === 'auto'));
 
 
   const cardVariants = {
@@ -296,7 +310,7 @@ export default function HomePage() {
                 IconComponent={Sofa}
               />
                <CardFooter className="justify-center pb-3 pt-0">
-                 <Link href="/devices" passHref>
+                 <Link href="/devices">
                    <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                  </Link>
                </CardFooter>
@@ -305,11 +319,17 @@ export default function HomePage() {
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className={devices.lightLDR !== "off" ? "text-yellow-400" : ""} /> LDR Smart Light
+                  <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : ""} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 justify-center">
+                  <span className={cn(
+                    "text-sm select-none", 
+                    devices.lightLDR === 'on' && devices.lightLDR !== 'auto' ? 'font-semibold text-primary' : 'text-muted-foreground'
+                  )}>
+                    ON
+                  </span>
                   <Switch
                     id="ldr-on-off-switch"
                     checked={devices.lightLDR === 'on'}
@@ -317,23 +337,26 @@ export default function HomePage() {
                     disabled={isUpdatingLightLDR || devices.lightLDR === 'auto'}
                     aria-label="Toggle LDR Smart Light On or Off"
                   />
-                  <Label htmlFor="ldr-on-off-switch" className={devices.lightLDR === 'auto' ? 'text-muted-foreground' : ''}>
-                    {devices.lightLDR === 'on' ? 'On' : 'Off'}
-                  </Label>
+                  <span className={cn(
+                    "text-sm select-none", 
+                    devices.lightLDR === 'off' && devices.lightLDR !== 'auto' ? 'font-semibold text-primary' : 'text-muted-foreground'
+                  )}>
+                    OFF
+                  </span>
                 </div>
                 <Button
                   variant={devices.lightLDR === 'auto' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => handleLDRLightUpdate('auto')}
+                  onClick={handleLDRAutoToggle}
                   disabled={isUpdatingLightLDR}
                   className="w-full"
                 >
-                  {isUpdatingLightLDR && devices.lightLDR === 'auto' && <LoadingSpinner size={16} className="mr-1" />}
-                  Auto Mode
+                  {isUpdatingLightLDR && <LoadingSpinner size={16} className="mr-1" />}
+                  {devices.lightLDR === 'auto' ? 'Auto Mode Active' : 'Enable Auto Mode'}
                 </Button>
-                 <Link href="/devices" passHref>
+                 <Link href="/devices">
                    <Button variant="link" size="sm" className="text-xs px-0 w-full justify-center">Advanced Settings</Button>
-                </Link>
+                 </Link>
               </CardContent>
             </Card>
 
@@ -344,7 +367,7 @@ export default function HomePage() {
                 IconComponent={BedDouble}
               />
               <CardFooter className="justify-center pb-3 pt-0">
-                 <Link href="/devices" passHref>
+                 <Link href="/devices">
                    <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                  </Link>
               </CardFooter>
@@ -359,4 +382,3 @@ export default function HomePage() {
     </div>
   );
 }
-
