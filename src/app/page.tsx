@@ -3,15 +3,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle, Leaf } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle, Leaf, Sofa } from 'lucide-react'; // Added Sofa
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls, LightStatus } from '@/types';
-// Progress component is no longer used on this page for device controls
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // Added AnimatePresence
 import { formatDistanceToNow } from 'date-fns';
 import {
   DropdownMenu,
@@ -58,12 +57,11 @@ export default function HomePage() {
         const newAlerts: AlertContent[] = [];
         const currentSensors = appData.sensors;
 
-        // Soil Moisture Alert: Critical if < 10%
         if (currentSensors.soilMoisture < 10) {
           newAlerts.push({
             id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
             message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Immediate watering needed.`,
-            timestamp: Date.now(), severity: 'critical', // Changed to critical
+            timestamp: Date.now(), severity: 'critical',
           });
         }
 
@@ -82,7 +80,7 @@ export default function HomePage() {
             timestamp: Date.now(), severity: 'critical',
           });
         }
-        setAlerts(newAlerts.sort((a, b) => b.timestamp - a.timestamp)); // Sort by most recent
+        setAlerts(newAlerts.sort((a, b) => b.timestamp - a.timestamp)); 
       };
       processAlerts();
     }
@@ -98,10 +96,8 @@ export default function HomePage() {
 
     try {
       await updateLightStatus(lightId, newStatus);
-      // console.log(`${lightId} status updated to ${newStatus}`);
     } catch (err) {
       console.error(`Failed to update ${lightId}`, err);
-      // Optionally, add a toast notification for error
     } finally {
       if (lightId === 'light1') setIsUpdatingLight1(false);
       else if (lightId === 'lightLDR') setIsUpdatingLightLDR(false);
@@ -150,7 +146,7 @@ export default function HomePage() {
         }
         let displayName = "Unknown Device";
         let icon = Lightbulb;
-        if (key === 'light1') {displayName = "Living Room Light"; icon = Lightbulb;}
+        if (key === 'light1') {displayName = "Living Room Light"; icon = Sofa;} // Changed icon
         else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Zap;}
         else if (key === 'light2') {displayName = "Bedroom Light"; icon = BedDouble;}
 
@@ -159,7 +155,7 @@ export default function HomePage() {
     });
   }
   
-  const onlineDeviceItems = deviceList.filter(device => device.status !== 'off');
+  const onlineDeviceItems = deviceList.filter(device => device.status && device.status !== 'off' && typeof device.status === 'string');
 
 
   const cardVariants = {
@@ -189,11 +185,50 @@ export default function HomePage() {
     }
   };
 
+  const bulbVariants = {
+    on: { 
+      backgroundColor: "rgba(250, 204, 21, 1)", // yellow-400
+      borderColor: "rgba(234, 179, 8, 1)", // yellow-500
+      boxShadow: "0 0 25px 10px rgba(250, 204, 21, 0.7)", 
+      scale: 1.05 
+    },
+    off: { 
+      backgroundColor: "rgba(209, 213, 219, 1)", // bg-gray-300
+      borderColor: "rgba(156, 163, 175, 1)", // border-gray-400
+      boxShadow: "none", 
+      scale: 1 
+    },
+  };
+  const darkBulbVariants = {
+    on: { 
+      backgroundColor: "rgba(250, 204, 21, 1)",
+      borderColor: "rgba(234, 179, 8, 1)",
+      boxShadow: "0 0 25px 10px rgba(250, 204, 21, 0.7)", 
+      scale: 1.05 
+    },
+    off: { 
+      backgroundColor: "rgba(75, 85, 99, 1)", // dark:bg-gray-600
+      borderColor: "rgba(156, 163, 175, 1)",
+      boxShadow: "none", 
+      scale: 1 
+    },
+  };
+
+  const rayVariants = {
+    hidden: { opacity: 0, scaleY: 0.5, y: 5 },
+    visible: (i:number) => ({ 
+      opacity: 1, 
+      scaleY: 1, 
+      y: 0,
+      transition: { delay: i * 0.03, duration: 0.2, ease: "easeOut" } 
+    }),
+    exit: { opacity: 0, scaleY: 0, y: 5, transition: {duration: 0.15}}
+  };
+
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <motion.div initial="hidden" animate="visible" variants={cardVariants}>
-        {/* Header Section */}
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-4xl font-bold font-headline text-primary">Welcome Home</h1>
@@ -230,14 +265,13 @@ export default function HomePage() {
           </div>
         </motion.div>
       
-        {/* Alerts Section (Full Width) */}
         {alerts.length > 0 && (
           <motion.section variants={itemVariants}>
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
               <ShieldAlert /> Important Alerts
               <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
             </h2>
-            <div className="grid gap-4 grid-cols-1"> {/* This will make alerts full width on all screens */}
+            <div className="grid gap-4 grid-cols-1">
               {alerts.map(alert => (
                 <Card key={alert.id} className={`border-l-4 ${alert.severity === 'critical' ? 'border-destructive' : 'border-yellow-500'}`}>
                   <CardHeader className="py-4 px-6">
@@ -268,7 +302,6 @@ export default function HomePage() {
           </motion.section>
         )}
 
-        {/* Sensor Overview Section */}
         <motion.section variants={itemVariants} className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Sensor Status</h2>
           {sensors ? (
@@ -289,38 +322,92 @@ export default function HomePage() {
           )}
         </motion.section>
 
-        {/* Device Overview Section */}
         <motion.section variants={itemVariants} className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Living Room Light */}
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+            {/* Living Room Light - New Interactive UI */}
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className={devices.light1 === "on" ? "text-yellow-400" : ""} /> Living Room Light
+                  <Sofa className="text-primary" /> Living Room Light
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2 mb-3">
-                  <Button
-                    variant={devices.light1 === 'on' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('light1', 'on')}
-                    disabled={isUpdatingLight1}
+              <CardContent className="flex flex-col items-center justify-center min-h-[180px] pt-2 pb-0">
+                <motion.div
+                  className="relative flex flex-col items-center cursor-pointer group mb-2"
+                  onClick={() => {
+                    if (isUpdatingLight1) return;
+                    setIsUpdatingLight1(true);
+                    handleLightUpdate('light1', devices.light1 === 'on' ? 'off' : 'on');
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (isUpdatingLight1) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setIsUpdatingLight1(true);
+                      handleLightUpdate('light1', devices.light1 === 'on' ? 'off' : 'on');
+                    }
+                  }}
+                  aria-pressed={devices.light1 === 'on'}
+                  aria-label={`Turn Living Room Light ${devices.light1 === 'on' ? 'off' : 'on'}`}
+                >
+                  {/* String stub */}
+                  <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-0 group-hover:bg-primary transition-colors"></div>
+                  {/* Light Bulb shape */}
+                  <motion.div 
+                    className={`relative w-12 h-12 rounded-full border-2`}
+                    variants={bulbVariants}
+                    animate={devices.light1 === 'on' ? "on" : "off"}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   >
-                    {isUpdatingLight1 && devices.light1 !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
-                  </Button>
-                  <Button
-                    variant={devices.light1 === 'off' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('light1', 'off')}
-                    disabled={isUpdatingLight1}
-                  >
-                    {isUpdatingLight1 && devices.light1 !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
-                  </Button>
-                </div>
-                <Link href="/devices">
+                     <div className="dark:hidden"> {/* Light mode bulb style */}
+                        <motion.div 
+                          className={`w-full h-full rounded-full`}
+                          variants={bulbVariants}
+                          animate={devices.light1 === 'on' ? "on" : "off"}
+                        />
+                      </div>
+                      <div className="hidden dark:block"> {/* Dark mode bulb style */}
+                        <motion.div 
+                          className={`w-full h-full rounded-full`}
+                          variants={darkBulbVariants}
+                           animate={devices.light1 === 'on' ? "on" : "off"}
+                        />
+                      </div>
+                    {/* Rays container (absolute positioning relative to bulb) */}
+                    <AnimatePresence>
+                      {devices.light1 === 'on' && (
+                        <motion.div 
+                          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit" // Use exit prop for AnimatePresence
+                        >
+                          {Array.from({ length: 12 }).map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="absolute w-[3px] h-12 origin-center"
+                              style={{ 
+                                backgroundColor: 'rgba(250, 204, 21, 0.6)', // Tailwind yellow-400 with opacity
+                                transform: `rotate(${i * 30}deg) translateY(-22px)`, 
+                                borderRadius: '3px',
+                              }}
+                              custom={i}
+                              variants={rayVariants}
+                            />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                  <div className="mt-4 text-sm font-semibold text-center h-5">
+                    {isUpdatingLight1 ? <LoadingSpinner size={16} /> : (devices.light1 === 'on' ? 'ON' : 'OFF')}
+                  </div>
+                </motion.div>
+                <Link href="/devices" passHref legacyBehavior={false}>
                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
@@ -360,7 +447,7 @@ export default function HomePage() {
                     {isUpdatingLightLDR && devices.lightLDR !== 'auto' ? <LoadingSpinner size={16} className="mr-1" /> : null} Auto
                   </Button>
                 </div>
-                <Link href="/devices">
+                <Link href="/devices" passHref legacyBehavior={false}>
                    <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
@@ -392,7 +479,7 @@ export default function HomePage() {
                     {isUpdatingLight2 && devices.light2 !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
                   </Button>
                 </div>
-                <Link href="/devices">
+                <Link href="/devices" passHref legacyBehavior={false}>
                    <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
