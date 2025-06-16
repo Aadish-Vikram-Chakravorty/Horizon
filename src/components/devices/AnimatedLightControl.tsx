@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Icon as LucideIcon } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+// LoadingSpinner import removed as it's no longer used here
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import type { LightStatus } from '@/types';
 import { cn } from '@/lib/utils';
@@ -55,10 +55,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       boxShadow: "none",
       scale: 1,
     },
-    loading: {
-      scale: [1, 1.05, 1],
-      transition: { repeat: Infinity, duration: 0.8, ease: "easeInOut" }
-    }
+    // loading state for bulbVariants is no longer strictly needed as spinner is removed,
+    // but can be kept if subtle loading animation on bulb itself is desired.
+    // For now, it will just use 'on' or 'off' states visually during update.
   };
 
   const darkBulbVariants = {
@@ -74,10 +73,6 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       boxShadow: "none",
       scale: 1,
     },
-    loading: {
-      scale: [1, 1.05, 1],
-      transition: { repeat: Infinity, duration: 0.8, ease: "easeInOut" }
-    }
   };
 
   const rayVariants = {
@@ -91,8 +86,8 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     exit: { opacity: 0, scaleY: 0, y: 8, transition: { duration: 0.12 } },
   };
 
+  // Visual state determined by currentStatus, even during update, spinner is gone
   const getBulbAnimationState = () => {
-    if (isUpdating) return "loading";
     return currentStatus === 'on' ? "on" : "off";
   }
 
@@ -118,14 +113,13 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
         aria-pressed={currentStatus === 'on'}
         aria-label={`Toggle ${displayName} ${currentStatus === 'on' ? 'off' : 'on'}`}
       >
-        {/* String stub */}
-        <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-0 group-hover:bg-primary transition-colors"></div>
+        {/* String stub - increased z-index */}
+        <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-10 group-hover:bg-primary transition-colors"></div>
         {/* Light Bulb shape */}
         <motion.div
           className="relative w-12 h-12 rounded-full border-2"
-          // Use a simpler duration-based transition for potentially snappier feel
           transition={{ duration: 0.2, ease: "circOut" }}
-          animate={getBulbAnimationState()}
+          animate={getBulbAnimationState()} // Animation state directly reflects currentStatus
         >
           <div className="dark:hidden">
             <motion.div
@@ -144,7 +138,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
             />
           </div>
           <AnimatePresence>
-            {currentStatus === 'on' && !isUpdating && (
+            {currentStatus === 'on' && !isUpdating && ( // Rays show when 'on' and not mid-update (i.e., after successful update)
               <motion.div
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 initial="hidden"
@@ -168,12 +162,12 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
             )}
           </AnimatePresence>
         </motion.div>
-        <div className="mt-3 text-sm font-semibold text-center h-5 w-16">
-          {isUpdating && <LoadingSpinner size={18} />}
-        </div>
+        {/* Removed the div that contained the LoadingSpinner */}
+        {/* An empty div can be placed here if fixed height is needed for layout consistency, e.g., <div className="h-5"></div> */}
       </motion.div>
     </div>
   );
 };
 
 export default AnimatedLightControl;
+
