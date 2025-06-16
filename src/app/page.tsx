@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -331,7 +331,7 @@ export default function HomePage() {
                   {isUpdatingLightLDR && devices.lightLDR === 'auto' && <LoadingSpinner size={16} className="mr-1" />}
                   Auto Mode
                 </Button>
-                 <Link href="/devices" passHref legacyBehavior={false}>
+                 <Link href="/devices" passHref>
                    <Button variant="link" size="sm" className="text-xs px-0 w-full justify-center">Advanced Settings</Button>
                 </Link>
               </CardContent>
@@ -359,3 +359,4 @@ export default function HomePage() {
     </div>
   );
 }
+
