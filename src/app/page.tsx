@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle, Leaf } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
-import { Progress } from '@/components/ui/progress';
+import type { AlertContent, SensorReadings, DeviceControls, LightStatus } from '@/types';
+// Progress component is no longer used on this page for device controls
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -45,9 +45,13 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
 };
 
 export default function HomePage() {
-  const { appData, loading, error } = useFirebaseData();
+  const { appData, loading, error, updateLightStatus } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
   
+  const [isUpdatingLight1, setIsUpdatingLight1] = useState(false);
+  const [isUpdatingLightLDR, setIsUpdatingLightLDR] = useState(false);
+  const [isUpdatingLight2, setIsUpdatingLight2] = useState(false);
+
   useEffect(() => {
     if (appData?.sensors) {
       const processAlerts = () => {
@@ -59,7 +63,7 @@ export default function HomePage() {
           newAlerts.push({
             id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
             message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Immediate watering needed.`,
-            timestamp: Date.now(), severity: 'critical',
+            timestamp: Date.now(), severity: 'critical', // Changed to critical
           });
         }
 
@@ -83,6 +87,28 @@ export default function HomePage() {
       processAlerts();
     }
   }, [appData]);
+
+  const handleLightUpdate = async (
+    lightId: 'light1' | 'lightLDR' | 'light2', 
+    newStatus: LightStatus
+  ) => {
+    if (lightId === 'light1') setIsUpdatingLight1(true);
+    else if (lightId === 'lightLDR') setIsUpdatingLightLDR(true);
+    else if (lightId === 'light2') setIsUpdatingLight2(true);
+
+    try {
+      await updateLightStatus(lightId, newStatus);
+      // console.log(`${lightId} status updated to ${newStatus}`);
+    } catch (err) {
+      console.error(`Failed to update ${lightId}`, err);
+      // Optionally, add a toast notification for error
+    } finally {
+      if (lightId === 'light1') setIsUpdatingLight1(false);
+      else if (lightId === 'lightLDR') setIsUpdatingLightLDR(false);
+      else if (lightId === 'light2') setIsUpdatingLight2(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -117,7 +143,7 @@ export default function HomePage() {
 
   if (devices) {
     mainDeviceKeys.forEach(key => {
-      if (key !== 'ldrIntensity') { // ldrIntensity is not a device to count as online/offline
+      if (key !== 'ldrIntensity') { 
         const isOnline = devices[key] && devices[key] !== 'off';
         if (isOnline) {
           onlineDevicesCount++;
@@ -132,6 +158,9 @@ export default function HomePage() {
       }
     });
   }
+  
+  const onlineDeviceItems = deviceList.filter(device => device.status !== 'off');
+
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -154,7 +183,7 @@ export default function HomePage() {
   const getSeverityBadgeVariant = (severity: AlertContent['severity']): "default" | "destructive" | "secondary" | "outline" | null | undefined => {
     switch (severity) {
       case 'critical': return 'destructive';
-      case 'warning': return 'secondary'; // Using secondary for medium as yellow might not contrast well
+      case 'warning': return 'secondary'; 
       case 'info': return 'outline';
       default: return 'default';
     }
@@ -179,32 +208,36 @@ export default function HomePage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Device Status</DropdownMenuLabel>
+                <DropdownMenuLabel>Online Devices</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {deviceList.map(device => (
-                  <DropdownMenuItem key={device.id} className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <device.icon className={`w-4 h-4 ${device.status !== 'off' ? 'text-green-500' : 'text-muted-foreground'}`} />
-                      {device.name}
-                    </div>
-                    <Badge variant={device.status !== 'off' ? 'default' : 'outline'} className={device.status !== 'off' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100' : ''}>
-                      {device.status !== 'off' ? 'Online' : 'Offline'}
-                    </Badge>
-                  </DropdownMenuItem>
-                ))}
+                {onlineDeviceItems.length > 0 ? (
+                  onlineDeviceItems.map(device => (
+                    <DropdownMenuItem key={device.id} className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <device.icon className={`w-4 h-4 text-green-500`} />
+                        {device.name}
+                      </div>
+                      <Badge variant={'default'} className={'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'}>
+                        Online
+                      </Badge>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No devices online</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </motion.div>
       
-        {/* Alerts Section */}
+        {/* Alerts Section (Full Width) */}
         {alerts.length > 0 && (
           <motion.section variants={itemVariants}>
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
               <ShieldAlert /> Important Alerts
               <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
             </h2>
-            <div className="grid gap-4 grid-cols-1">
+            <div className="grid gap-4 grid-cols-1"> {/* This will make alerts full width on all screens */}
               {alerts.map(alert => (
                 <Card key={alert.id} className={`border-l-4 ${alert.severity === 'critical' ? 'border-destructive' : 'border-yellow-500'}`}>
                   <CardHeader className="py-4 px-6">
@@ -261,20 +294,39 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Living Room Light */}
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className={devices.light1 !== "off" ? "text-yellow-400" : ""} /> Living Room Light
+                  <Lightbulb className={devices.light1 === "on" ? "text-yellow-400" : ""} /> Living Room Light
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.light1}</span></p>
-                <Progress value={devices.light1 === "on" ? 100 : devices.light1 === "auto" ? 50 : 0} className="mt-2 h-2" />
+                <div className="flex space-x-2 mb-3">
+                  <Button
+                    variant={devices.light1 === 'on' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('light1', 'on')}
+                    disabled={isUpdatingLight1}
+                  >
+                    {isUpdatingLight1 && devices.light1 !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
+                  </Button>
+                  <Button
+                    variant={devices.light1 === 'off' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('light1', 'off')}
+                    disabled={isUpdatingLight1}
+                  >
+                    {isUpdatingLight1 && devices.light1 !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
+                  </Button>
+                </div>
                 <Link href="/devices">
-                  <Button variant="outline" size="sm" className="mt-4">Manage</Button>
+                  <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
             </Card>
+
+            {/* LDR Smart Light */}
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -282,24 +334,66 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.lightLDR}</span></p>
-                 <Progress value={devices.lightLDR === "on" ? 100 : devices.lightLDR === "auto" ? 50 : 0} className="mt-2 h-2" />
+                <div className="flex space-x-2 mb-3">
+                  <Button
+                    variant={devices.lightLDR === 'on' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('lightLDR', 'on')}
+                    disabled={isUpdatingLightLDR}
+                  >
+                    {isUpdatingLightLDR && devices.lightLDR !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
+                  </Button>
+                  <Button
+                    variant={devices.lightLDR === 'off' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('lightLDR', 'off')}
+                    disabled={isUpdatingLightLDR}
+                  >
+                   {isUpdatingLightLDR && devices.lightLDR !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
+                  </Button>
+                  <Button
+                    variant={devices.lightLDR === 'auto' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('lightLDR', 'auto')}
+                    disabled={isUpdatingLightLDR}
+                  >
+                    {isUpdatingLightLDR && devices.lightLDR !== 'auto' ? <LoadingSpinner size={16} className="mr-1" /> : null} Auto
+                  </Button>
+                </div>
                 <Link href="/devices">
-                  <Button variant="outline" size="sm" className="mt-4">Manage</Button>
+                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
             </Card>
+
+            {/* Bedroom Light */}
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                   <BedDouble className={devices.light2 !== "off" ? "text-yellow-400" : ""} /> Bedroom Light
+                   <BedDouble className={devices.light2 === "on" ? "text-yellow-400" : ""} /> Bedroom Light
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.light2}</span></p>
-                 <Progress value={devices.light2 === "on" ? 100 : devices.light2 === "auto" ? 50 : 0} className="mt-2 h-2" />
+                <div className="flex space-x-2 mb-3">
+                   <Button
+                    variant={devices.light2 === 'on' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('light2', 'on')}
+                    disabled={isUpdatingLight2}
+                  >
+                    {isUpdatingLight2 && devices.light2 !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
+                  </Button>
+                  <Button
+                    variant={devices.light2 === 'off' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLightUpdate('light2', 'off')}
+                    disabled={isUpdatingLight2}
+                  >
+                    {isUpdatingLight2 && devices.light2 !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
+                  </Button>
+                </div>
                 <Link href="/devices">
-                  <Button variant="outline" size="sm" className="mt-4">Manage</Button>
+                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
                 </Link>
               </CardContent>
             </Card>
