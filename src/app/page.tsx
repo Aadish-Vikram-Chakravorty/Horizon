@@ -3,15 +3,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge'; // Added Badge import
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Helper to get emoji status
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
@@ -35,7 +44,6 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
   }
 };
 
-
 export default function HomePage() {
   const { appData, loading, error } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
@@ -46,11 +54,12 @@ export default function HomePage() {
         const newAlerts: AlertContent[] = [];
         const currentSensors = appData.sensors;
 
+        // Soil Moisture Alert: Critical if < 10%
         if (currentSensors.soilMoisture < 10) {
           newAlerts.push({
             id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
-            message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Water your plants.`,
-            timestamp: Date.now(), severity: 'warning', sensorValue: currentSensors.soilMoisture
+            message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Immediate watering needed.`,
+            timestamp: Date.now(), severity: 'critical', sensorValue: currentSensors.soilMoisture
           });
         }
 
@@ -69,7 +78,7 @@ export default function HomePage() {
             timestamp: Date.now(), severity: 'critical', sensorValue: true
           });
         }
-        setAlerts(newAlerts);
+        setAlerts(newAlerts.sort((a, b) => b.timestamp - a.timestamp)); // Sort by most recent
       };
       processAlerts();
     }
@@ -83,7 +92,7 @@ export default function HomePage() {
     );
   }
 
-  if (error || !appData) { // Ensure appData is checked here as well
+  if (error || !appData) {
     return (
       <Card className="m-auto mt-10 max-w-md border-destructive">
         <CardHeader>
@@ -104,15 +113,25 @@ export default function HomePage() {
 
   const mainDeviceKeys: (keyof DeviceControls)[] = ['light1', 'lightLDR', 'light2'];
   let onlineDevicesCount = 0;
+  const deviceList: { id: keyof DeviceControls; name: string; status: LightStatus | number | undefined, icon: React.ElementType }[] = [];
+
   if (devices) {
     mainDeviceKeys.forEach(key => {
-      if (key !== 'ldrIntensity' && devices[key] && devices[key] !== 'off') {
-        onlineDevicesCount++;
+      if (key !== 'ldrIntensity') { // ldrIntensity is not a device to count as online/offline
+        const isOnline = devices[key] && devices[key] !== 'off';
+        if (isOnline) {
+          onlineDevicesCount++;
+        }
+        let displayName = "Unknown Device";
+        let icon = Lightbulb;
+        if (key === 'light1') {displayName = "Living Room Light"; icon = Lightbulb;}
+        else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Zap;}
+        else if (key === 'light2') {displayName = "Bedroom Light"; icon = BedDouble;}
+
+        deviceList.push({ id: key, name: displayName, status: devices[key], icon: icon });
       }
     });
   }
-  const allSystemsOnline = mainDeviceKeys.filter(key => key !== 'ldrIntensity').length > 0 && onlineDevicesCount === mainDeviceKeys.filter(key => key !== 'ldrIntensity').length;
-
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -131,6 +150,16 @@ export default function HomePage() {
       default: return 'Unknown';
     }
   };
+  
+  const getSeverityBadgeVariant = (severity: AlertContent['severity']): "default" | "destructive" | "secondary" | "outline" | null | undefined => {
+    switch (severity) {
+      case 'critical': return 'destructive';
+      case 'warning': return 'secondary'; // Using secondary for medium as yellow might not contrast well
+      case 'info': return 'outline';
+      default: return 'default';
+    }
+  };
+
 
   return (
     <div className="container mx-auto p-4 space-y-6">
@@ -142,17 +171,29 @@ export default function HomePage() {
             <p className="text-muted-foreground mt-1">Monitor and control your smart home devices.</p>
           </div>
            <div className="text-right">
-            {allSystemsOnline ? (
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                <Wifi size={20} />
-                <span className="font-semibold">All systems online</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
-                <WifiOff size={20} />
-                <span className="font-semibold">{onlineDevicesCount} of {mainDeviceKeys.filter(key => key !== 'ldrIntensity').length} devices online</span>
-              </div>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  {onlineDevicesCount} / {mainDeviceKeys.filter(key => key !== 'ldrIntensity').length} Devices Online
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Device Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {deviceList.map(device => (
+                  <DropdownMenuItem key={device.id} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <device.icon className={`w-4 h-4 ${device.status !== 'off' ? 'text-green-500' : 'text-muted-foreground'}`} />
+                      {device.name}
+                    </div>
+                    <Badge variant={device.status !== 'off' ? 'default' : 'outline'} className={device.status !== 'off' ? 'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100' : ''}>
+                      {device.status !== 'off' ? 'Online' : 'Offline'}
+                    </Badge>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </motion.div>
       
@@ -163,25 +204,30 @@ export default function HomePage() {
               <ShieldAlert /> Important Alerts
               <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
             </h2>
-            <div className="grid gap-4 grid-cols-1"> {/* Changed to grid-cols-1 for full width */}
+            <div className="grid gap-4 grid-cols-1">
               {alerts.map(alert => (
                 <Card key={alert.id} className={`border-l-4 ${alert.severity === 'critical' ? 'border-destructive' : 'border-yellow-500'}`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      {alert.severity === 'critical' ? <AlertTriangle className="text-destructive"/> : <Activity className="text-yellow-500"/>}
-                      {alert.title}
-                    </CardTitle>
-                    <CardDescription>
-                      {new Date(alert.timestamp).toLocaleString()}
-                      <br />
-                      Severity: <span className={alert.severity === 'critical' ? 'text-destructive font-semibold' : alert.severity === 'warning' ? 'text-yellow-600 dark:text-yellow-400 font-semibold' : 'font-semibold'}>
+                  <CardHeader className="py-4 px-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                          {alert.type === 'flame' ? <AlertTriangle className="text-destructive"/> : 
+                           alert.type === 'soilMoisture' ? <Leaf className="text-destructive" /> : 
+                           alert.type === 'waterShortage' ? <Zap className="text-destructive" /> : 
+                           <Activity className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}/>}
+                          {alert.title}
+                        </CardTitle>
+                        <CardDescription className="text-xs mt-1">
+                          {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
+                        </CardDescription>
+                      </div>
+                      <Badge variant={getSeverityBadgeVariant(alert.severity)}>
                         {getSeverityText(alert.severity)}
-                      </span>
-                    </CardDescription>
+                      </Badge>
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pb-4 px-6">
                     <p>{alert.message}</p>
-                    {alert.sensorValue !== undefined && <p className="text-sm mt-1">Value: {String(alert.sensorValue)}</p>}
                   </CardContent>
                 </Card>
               ))}
@@ -266,3 +312,4 @@ export default function HomePage() {
     </div>
   );
 }
+
