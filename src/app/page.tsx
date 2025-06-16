@@ -3,14 +3,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, CheckCircle, XCircle, Leaf, Sofa } from 'lucide-react'; // Added Sofa
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls, LightStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion'; // Added AnimatePresence
+import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import {
   DropdownMenu,
@@ -20,8 +20,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import AnimatedLightControl from '@/components/devices/AnimatedLightControl';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
-// Helper to get emoji status
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
   switch (key) {
     case 'temperature':
@@ -39,17 +41,14 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
     case 'waterShortage':
       return value ? 'Shortage 🚱' : 'Available ✅';
     default:
-      return '';
+      return String(value);
   }
 };
 
 export default function HomePage() {
   const { appData, loading, error, updateLightStatus } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
-  
-  const [isUpdatingLight1, setIsUpdatingLight1] = useState(false);
   const [isUpdatingLightLDR, setIsUpdatingLightLDR] = useState(false);
-  const [isUpdatingLight2, setIsUpdatingLight2] = useState(false);
 
   useEffect(() => {
     if (appData?.sensors) {
@@ -63,7 +62,14 @@ export default function HomePage() {
             message: `Soil moisture is critically low (${currentSensors.soilMoisture}%). Immediate watering needed.`,
             timestamp: Date.now(), severity: 'critical',
           });
+        } else if (currentSensors.soilMoisture < 20) {
+            newAlerts.push({
+            id: 'soilMoistureWarning_fallback', type: 'soilMoisture', title: 'Low Soil Moisture Warning',
+            message: `Soil moisture is low (${currentSensors.soilMoisture}%). Consider watering soon.`,
+            timestamp: Date.now(), severity: 'warning',
+          });
         }
+
 
         if (currentSensors.flameDetected) {
            newAlerts.push({
@@ -86,23 +92,20 @@ export default function HomePage() {
     }
   }, [appData]);
 
-  const handleLightUpdate = async (
-    lightId: 'light1' | 'lightLDR' | 'light2', 
-    newStatus: LightStatus
-  ) => {
-    if (lightId === 'light1') setIsUpdatingLight1(true);
-    else if (lightId === 'lightLDR') setIsUpdatingLightLDR(true);
-    else if (lightId === 'light2') setIsUpdatingLight2(true);
-
+  const handleLDRLightUpdate = async (newStatus: LightStatus) => {
+    setIsUpdatingLightLDR(true);
     try {
-      await updateLightStatus(lightId, newStatus);
+      await updateLightStatus('lightLDR', newStatus);
     } catch (err) {
-      console.error(`Failed to update ${lightId}`, err);
+      console.error('Failed to update lightLDR', err);
+      // Add toast error if needed
     } finally {
-      if (lightId === 'light1') setIsUpdatingLight1(false);
-      else if (lightId === 'lightLDR') setIsUpdatingLightLDR(false);
-      else if (lightId === 'light2') setIsUpdatingLight2(false);
+      setIsUpdatingLightLDR(false);
     }
+  };
+  
+  const handleLDRSwitchChange = (checked: boolean) => {
+    handleLDRLightUpdate(checked ? 'on' : 'off');
   };
 
 
@@ -140,22 +143,23 @@ export default function HomePage() {
   if (devices) {
     mainDeviceKeys.forEach(key => {
       if (key !== 'ldrIntensity') { 
-        const isOnline = devices[key] && devices[key] !== 'off';
+        const deviceStatus = devices[key];
+        const isOnline = deviceStatus && (typeof deviceStatus === 'string' && deviceStatus !== 'off');
         if (isOnline) {
           onlineDevicesCount++;
         }
         let displayName = "Unknown Device";
         let icon = Lightbulb;
-        if (key === 'light1') {displayName = "Living Room Light"; icon = Sofa;} // Changed icon
+        if (key === 'light1') {displayName = "Living Room Light"; icon = Sofa;}
         else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Zap;}
         else if (key === 'light2') {displayName = "Bedroom Light"; icon = BedDouble;}
 
-        deviceList.push({ id: key, name: displayName, status: devices[key], icon: icon });
+        deviceList.push({ id: key, name: displayName, status: deviceStatus, icon: icon });
       }
     });
   }
   
-  const onlineDeviceItems = deviceList.filter(device => device.status && device.status !== 'off' && typeof device.status === 'string');
+  const onlineDeviceItems = deviceList.filter(device => device.status && (typeof device.status === 'string' && device.status !== 'off'));
 
 
   const cardVariants = {
@@ -185,47 +189,6 @@ export default function HomePage() {
     }
   };
 
-  const bulbVariants = {
-    on: { 
-      backgroundColor: "rgba(250, 204, 21, 1)", // yellow-400
-      borderColor: "rgba(234, 179, 8, 1)", // yellow-500
-      boxShadow: "0 0 25px 10px rgba(250, 204, 21, 0.7)", 
-      scale: 1.05 
-    },
-    off: { 
-      backgroundColor: "rgba(209, 213, 219, 1)", // bg-gray-300
-      borderColor: "rgba(156, 163, 175, 1)", // border-gray-400
-      boxShadow: "none", 
-      scale: 1 
-    },
-  };
-  const darkBulbVariants = {
-    on: { 
-      backgroundColor: "rgba(250, 204, 21, 1)",
-      borderColor: "rgba(234, 179, 8, 1)",
-      boxShadow: "0 0 25px 10px rgba(250, 204, 21, 0.7)", 
-      scale: 1.05 
-    },
-    off: { 
-      backgroundColor: "rgba(75, 85, 99, 1)", // dark:bg-gray-600
-      borderColor: "rgba(156, 163, 175, 1)",
-      boxShadow: "none", 
-      scale: 1 
-    },
-  };
-
-  const rayVariants = {
-    hidden: { opacity: 0, scaleY: 0.5, y: 5 },
-    visible: (i:number) => ({ 
-      opacity: 1, 
-      scaleY: 1, 
-      y: 0,
-      transition: { delay: i * 0.03, duration: 0.2, ease: "easeOut" } 
-    }),
-    exit: { opacity: 0, scaleY: 0, y: 5, transition: {duration: 0.15}}
-  };
-
-
   return (
     <div className="container mx-auto p-4 space-y-6">
       <motion.div initial="hidden" animate="visible" variants={cardVariants}>
@@ -253,7 +216,7 @@ export default function HomePage() {
                         {device.name}
                       </div>
                       <Badge variant={'default'} className={'bg-green-100 text-green-700 dark:bg-green-700 dark:text-green-100'}>
-                        Online
+                        {typeof device.status === 'string' ? device.status.toUpperCase() : 'Online'}
                       </Badge>
                     </DropdownMenuItem>
                   ))
@@ -326,164 +289,67 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Living Room Light - New Interactive UI */}
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sofa className="text-primary" /> Living Room Light
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center min-h-[180px] pt-2 pb-0">
-                <motion.div
-                  className="relative flex flex-col items-center cursor-pointer group mb-2"
-                  onClick={() => {
-                    if (isUpdatingLight1) return;
-                    setIsUpdatingLight1(true);
-                    handleLightUpdate('light1', devices.light1 === 'on' ? 'off' : 'on');
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (isUpdatingLight1) return;
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      setIsUpdatingLight1(true);
-                      handleLightUpdate('light1', devices.light1 === 'on' ? 'off' : 'on');
-                    }
-                  }}
-                  aria-pressed={devices.light1 === 'on'}
-                  aria-label={`Turn Living Room Light ${devices.light1 === 'on' ? 'off' : 'on'}`}
-                >
-                  {/* String stub */}
-                  <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-0 group-hover:bg-primary transition-colors"></div>
-                  {/* Light Bulb shape */}
-                  <motion.div 
-                    className={`relative w-12 h-12 rounded-full border-2`}
-                    variants={bulbVariants}
-                    animate={devices.light1 === 'on' ? "on" : "off"}
-                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  >
-                     <div className="dark:hidden"> {/* Light mode bulb style */}
-                        <motion.div 
-                          className={`w-full h-full rounded-full`}
-                          variants={bulbVariants}
-                          animate={devices.light1 === 'on' ? "on" : "off"}
-                        />
-                      </div>
-                      <div className="hidden dark:block"> {/* Dark mode bulb style */}
-                        <motion.div 
-                          className={`w-full h-full rounded-full`}
-                          variants={darkBulbVariants}
-                           animate={devices.light1 === 'on' ? "on" : "off"}
-                        />
-                      </div>
-                    {/* Rays container (absolute positioning relative to bulb) */}
-                    <AnimatePresence>
-                      {devices.light1 === 'on' && (
-                        <motion.div 
-                          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit" // Use exit prop for AnimatePresence
-                        >
-                          {Array.from({ length: 12 }).map((_, i) => (
-                            <motion.div
-                              key={i}
-                              className="absolute w-[3px] h-12 origin-center"
-                              style={{ 
-                                backgroundColor: 'rgba(250, 204, 21, 0.6)', // Tailwind yellow-400 with opacity
-                                transform: `rotate(${i * 30}deg) translateY(-22px)`, 
-                                borderRadius: '3px',
-                              }}
-                              custom={i}
-                              variants={rayVariants}
-                            />
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                  <div className="mt-4 text-sm font-semibold text-center h-5">
-                    {isUpdatingLight1 ? <LoadingSpinner size={16} /> : (devices.light1 === 'on' ? 'ON' : 'OFF')}
-                  </div>
-                </motion.div>
-                <Link href="/devices" passHref legacyBehavior={false}>
-                  <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
-                </Link>
-              </CardContent>
+              <AnimatedLightControl
+                lightId="light1"
+                displayName="Living Room Light"
+                IconComponent={Sofa}
+              />
+               <CardFooter className="justify-center pb-3 pt-0">
+                 <Link href="/devices" passHref>
+                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
+                 </Link>
+               </CardFooter>
             </Card>
-
-            {/* LDR Smart Light */}
+            
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className={devices.lightLDR !== "off" ? "text-yellow-400" : ""} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2 mb-3">
-                  <Button
-                    variant={devices.lightLDR === 'on' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('lightLDR', 'on')}
-                    disabled={isUpdatingLightLDR}
-                  >
-                    {isUpdatingLightLDR && devices.lightLDR !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
-                  </Button>
-                  <Button
-                    variant={devices.lightLDR === 'off' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('lightLDR', 'off')}
-                    disabled={isUpdatingLightLDR}
-                  >
-                   {isUpdatingLightLDR && devices.lightLDR !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
-                  </Button>
-                  <Button
-                    variant={devices.lightLDR === 'auto' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('lightLDR', 'auto')}
-                    disabled={isUpdatingLightLDR}
-                  >
-                    {isUpdatingLightLDR && devices.lightLDR !== 'auto' ? <LoadingSpinner size={16} className="mr-1" /> : null} Auto
-                  </Button>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Switch
+                    id="ldr-on-off-switch"
+                    checked={devices.lightLDR === 'on'}
+                    onCheckedChange={handleLDRSwitchChange}
+                    disabled={isUpdatingLightLDR || devices.lightLDR === 'auto'}
+                    aria-label="Toggle LDR Smart Light On or Off"
+                  />
+                  <Label htmlFor="ldr-on-off-switch" className={devices.lightLDR === 'auto' ? 'text-muted-foreground' : ''}>
+                    {devices.lightLDR === 'on' ? 'On' : 'Off'}
+                  </Label>
                 </div>
-                <Link href="/devices" passHref legacyBehavior={false}>
-                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
+                <Button
+                  variant={devices.lightLDR === 'auto' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleLDRLightUpdate('auto')}
+                  disabled={isUpdatingLightLDR}
+                  className="w-full"
+                >
+                  {isUpdatingLightLDR && devices.lightLDR === 'auto' && <LoadingSpinner size={16} className="mr-1" />}
+                  Auto Mode
+                </Button>
+                 <Link href="/devices" passHref legacyBehavior={false}>
+                   <Button variant="link" size="sm" className="text-xs px-0 w-full justify-center">Advanced Settings</Button>
                 </Link>
               </CardContent>
             </Card>
 
-            {/* Bedroom Light */}
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                   <BedDouble className={devices.light2 === "on" ? "text-yellow-400" : ""} /> Bedroom Light
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex space-x-2 mb-3">
-                   <Button
-                    variant={devices.light2 === 'on' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('light2', 'on')}
-                    disabled={isUpdatingLight2}
-                  >
-                    {isUpdatingLight2 && devices.light2 !== 'on' ? <LoadingSpinner size={16} className="mr-1" /> : null} On
-                  </Button>
-                  <Button
-                    variant={devices.light2 === 'off' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleLightUpdate('light2', 'off')}
-                    disabled={isUpdatingLight2}
-                  >
-                    {isUpdatingLight2 && devices.light2 !== 'off' ? <LoadingSpinner size={16} className="mr-1" /> : null} Off
-                  </Button>
-                </div>
-                <Link href="/devices" passHref legacyBehavior={false}>
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
+              <AnimatedLightControl
+                lightId="light2"
+                displayName="Bedroom Light"
+                IconComponent={BedDouble}
+              />
+              <CardFooter className="justify-center pb-3 pt-0">
+                 <Link href="/devices" passHref>
                    <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
-                </Link>
-              </CardContent>
+                 </Link>
+              </CardFooter>
             </Card>
+
           </div>
           ) : (
              <p>No device data available.</p>
@@ -493,4 +359,3 @@ export default function HomePage() {
     </div>
   );
 }
-
