@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AnimatedLightControl from '@/components/devices/AnimatedLightControl';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label'; // Label was already imported
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 
@@ -107,17 +107,14 @@ export default function HomePage() {
   };
   
   const handleLDRSwitchChange = (checked: boolean) => {
-    // This function is called when the switch is toggled.
-    // It should set the light to 'on' if checked, or 'off' if unchecked.
-    // It should not set to 'auto'.
     handleLDRLightUpdate(checked ? 'on' : 'off');
   };
 
   const handleLDRAutoToggle = () => {
     if (devices?.lightLDR === 'auto') {
-      handleLDRLightUpdate('off'); // Turn off when disabling auto
+      handleLDRLightUpdate('off'); 
     } else {
-      handleLDRLightUpdate('auto'); // Turn on auto
+      handleLDRLightUpdate('auto'); 
     }
   };
 
@@ -157,7 +154,6 @@ export default function HomePage() {
     mainDeviceKeys.forEach(key => {
       if (key !== 'ldrIntensity') { 
         const deviceStatus = devices[key];
-        // A device is online if its status is 'on' or 'auto'
         const isOnline = deviceStatus && (deviceStatus === 'on' || deviceStatus === 'auto');
         if (isOnline) {
           onlineDevicesCount++;
@@ -303,7 +299,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <AnimatedLightControl
                 lightId="light1"
                 displayName="Living Room Light"
@@ -360,7 +356,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <AnimatedLightControl
                 lightId="light2"
                 displayName="Bedroom Light"
@@ -382,3 +378,4 @@ export default function HomePage() {
     </div>
   );
 }
+

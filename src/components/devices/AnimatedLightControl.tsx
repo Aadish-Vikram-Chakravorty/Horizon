@@ -4,13 +4,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Icon as LucideIcon } from 'lucide-react';
-// LoadingSpinner import removed as it's no longer used here
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import type { LightStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface AnimatedLightControlProps {
-  lightId: 'light1' | 'light2'; // Only for lights that use this animation
+  lightId: 'light1' | 'light2'; 
   displayName: string;
   IconComponent: LucideIcon;
   className?: string;
@@ -36,7 +35,6 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       await updateLightStatus(lightId, newStatus);
     } catch (err) {
       console.error(`Failed to update ${lightId}`, err);
-      // Optionally: show toast error
     } finally {
       setIsUpdating(false);
     }
@@ -44,20 +42,17 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
 
   const bulbVariants = {
     on: {
-      backgroundColor: "rgba(250, 204, 21, 1)", // yellow-400
-      borderColor: "rgba(234, 179, 8, 1)", // yellow-500
+      backgroundColor: "rgba(250, 204, 21, 1)", 
+      borderColor: "rgba(234, 179, 8, 1)", 
       boxShadow: "0 0 20px 8px rgba(250, 204, 21, 0.6)",
       scale: 1.03,
     },
     off: {
-      backgroundColor: "rgba(209, 213, 219, 1)", // bg-gray-300
-      borderColor: "rgba(156, 163, 175, 1)", // border-gray-400
+      backgroundColor: "rgba(209, 213, 219, 1)", 
+      borderColor: "rgba(156, 163, 175, 1)", 
       boxShadow: "none",
       scale: 1,
     },
-    // loading state for bulbVariants is no longer strictly needed as spinner is removed,
-    // but can be kept if subtle loading animation on bulb itself is desired.
-    // For now, it will just use 'on' or 'off' states visually during update.
   };
 
   const darkBulbVariants = {
@@ -68,8 +63,8 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       scale: 1.03,
     },
     off: {
-      backgroundColor: "rgba(75, 85, 99, 1)", // dark:bg-gray-600
-      borderColor: "rgba(107, 114, 128, 1)", // dark:border-gray-500
+      backgroundColor: "rgba(75, 85, 99, 1)", 
+      borderColor: "rgba(107, 114, 128, 1)", 
       boxShadow: "none",
       scale: 1,
     },
@@ -86,7 +81,6 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     exit: { opacity: 0, scaleY: 0, y: 8, transition: { duration: 0.12 } },
   };
 
-  // Visual state determined by currentStatus, even during update, spinner is gone
   const getBulbAnimationState = () => {
     return currentStatus === 'on' ? "on" : "off";
   }
@@ -113,17 +107,15 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
         aria-pressed={currentStatus === 'on'}
         aria-label={`Toggle ${displayName} ${currentStatus === 'on' ? 'off' : 'on'}`}
       >
-        {/* String stub - increased z-index */}
         <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-10 group-hover:bg-primary transition-colors"></div>
-        {/* Light Bulb shape */}
         <motion.div
-          className="relative w-12 h-12 rounded-full border-2"
+          className="relative w-12 h-12 rounded-full" // Removed border-2 from here
           transition={{ duration: 0.2, ease: "circOut" }}
-          animate={getBulbAnimationState()} // Animation state directly reflects currentStatus
+          animate={getBulbAnimationState()} 
         >
           <div className="dark:hidden">
             <motion.div
-              className="w-full h-full rounded-full"
+              className="w-full h-full rounded-full border-2" // Added border-2 here
               variants={bulbVariants}
               animate={getBulbAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
@@ -131,14 +123,14 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
           </div>
           <div className="hidden dark:block">
             <motion.div
-              className="w-full h-full rounded-full"
+              className="w-full h-full rounded-full border-2" // Added border-2 here
               variants={darkBulbVariants}
               animate={getBulbAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
             />
           </div>
           <AnimatePresence>
-            {currentStatus === 'on' && !isUpdating && ( // Rays show when 'on' and not mid-update (i.e., after successful update)
+            {currentStatus === 'on' && !isUpdating && ( 
               <motion.div
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
                 initial="hidden"
@@ -150,7 +142,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
                     key={i}
                     className="absolute w-[3px] h-12 origin-center"
                     style={{
-                      backgroundColor: 'rgba(250, 204, 21, 0.55)', // Tailwind yellow-400 with opacity
+                      backgroundColor: 'rgba(250, 204, 21, 0.55)', 
                       transform: `rotate(${i * 30}deg) translateY(-22px)`,
                       borderRadius: '3px',
                     }}
@@ -162,12 +154,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
             )}
           </AnimatePresence>
         </motion.div>
-        {/* Removed the div that contained the LoadingSpinner */}
-        {/* An empty div can be placed here if fixed height is needed for layout consistency, e.g., <div className="h-5"></div> */}
       </motion.div>
     </div>
   );
 };
 
 export default AnimatedLightControl;
-
