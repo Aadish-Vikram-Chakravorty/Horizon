@@ -3,10 +3,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle } from 'lucide-react';
+import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle, Zap, CalendarDays, Wifi, WifiOff } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { AlertContent, SensorReadings } from '@/types';
+import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -24,7 +24,7 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
     case 'waterLevel':
       return `${value}% 🌊`;
     case 'ldrBrightness':
-      return value > 500 ? 'Bright 💡' : 'Dim 💡'; // Assuming 0-1023 range
+      return value > 500 ? 'Bright 💡' : 'Dim 💡';
     case 'flameDetected':
       return value ? 'Detected 🔥' : 'Safe ✅';
     case 'waterShortage':
@@ -38,6 +38,13 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
 export default function HomePage() {
   const { appData, loading, error } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
+  const [currentDateString, setCurrentDateString] = useState<string>('');
+
+  useEffect(() => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    setCurrentDateString(now.toLocaleDateString(undefined, options));
+  }, []);
 
   useEffect(() => {
     if (appData?.sensors) {
@@ -45,7 +52,6 @@ export default function HomePage() {
         const newAlerts: AlertContent[] = [];
         const currentSensors = appData.sensors;
 
-        // Soil Moisture Alert
         if (currentSensors.soilMoisture < 10) {
           newAlerts.push({
             id: 'soilMoistureLow_fallback', type: 'soilMoisture', title: 'Low Soil Moisture!',
@@ -54,7 +60,6 @@ export default function HomePage() {
           });
         }
 
-        // Flame Detection Alert
         if (currentSensors.flameDetected) {
            newAlerts.push({
             id: 'flameDetected_fallback', type: 'flame', title: 'Flame Detected!',
@@ -63,7 +68,6 @@ export default function HomePage() {
           });
         }
         
-        // Water Shortage Alert
         if (currentSensors.waterShortage) {
           newAlerts.push({
             id: 'waterShortage_fallback', type: 'waterShortage', title: 'Water Shortage!',
@@ -104,6 +108,18 @@ export default function HomePage() {
   const sensors = appData?.sensors;
   const devices = appData?.devices;
 
+  const mainDeviceKeys: (keyof DeviceControls)[] = ['light1', 'lightLDR', 'light2'];
+  let onlineDevicesCount = 0;
+  if (devices) {
+    mainDeviceKeys.forEach(key => {
+      if (devices[key] && devices[key] !== 'off') {
+        onlineDevicesCount++;
+      }
+    });
+  }
+  const allSystemsOnline = mainDeviceKeys.length > 0 && onlineDevicesCount === mainDeviceKeys.length;
+
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } },
@@ -116,7 +132,31 @@ export default function HomePage() {
   return (
     <div className="container mx-auto p-4 space-y-6">
       <motion.div initial="hidden" animate="visible" variants={cardVariants}>
-        <h1 className="text-3xl font-bold font-headline text-primary mb-6">Dashboard</h1>
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div>
+            <h1 className="text-4xl font-bold font-headline text-primary">Welcome Home</h1>
+            <p className="text-muted-foreground mt-1">Monitor and control your smart home devices.</p>
+          </div>
+          <div className="text-right">
+            {allSystemsOnline ? (
+              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                <Wifi size={20} />
+                <span className="font-semibold">All systems online</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <WifiOff size={20} />
+                <span className="font-semibold">{onlineDevicesCount} of {mainDeviceKeys.length} devices online</span>
+              </div>
+            )}
+            {currentDateString && (
+              <p className="text-sm text-muted-foreground mt-1 flex items-center justify-end gap-2">
+                <CalendarDays size={16}/> {currentDateString}
+              </p>
+            )}
+          </div>
+        </motion.div>
       
         {/* Alerts Section */}
         {alerts.length > 0 && (
@@ -169,7 +209,7 @@ export default function HomePage() {
         <motion.section variants={itemVariants} className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -177,7 +217,7 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xl">Status: <span className="font-semibold capitalize">{devices.light1}</span></p>
+                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.light1}</span></p>
                 <Progress value={devices.light1 === "on" ? 100 : devices.light1 === "auto" ? 50 : 0} className="mt-2 h-2" />
                 <Link href="/devices">
                   <Button variant="outline" size="sm" className="mt-4">Manage</Button>
@@ -187,12 +227,26 @@ export default function HomePage() {
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className={devices.lightLDR !== "off" ? "text-yellow-400" : ""} /> LDR Light
+                  <Zap className={devices.lightLDR !== "off" ? "text-yellow-400" : ""} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xl">Status: <span className="font-semibold capitalize">{devices.lightLDR}</span></p>
+                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.lightLDR}</span></p>
                  <Progress value={devices.lightLDR === "on" ? 100 : devices.lightLDR === "auto" ? 50 : 0} className="mt-2 h-2" />
+                <Link href="/devices">
+                  <Button variant="outline" size="sm" className="mt-4">Manage</Button>
+                </Link>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                   <Lightbulb className={devices.light2 !== "off" ? "text-yellow-400" : ""} /> Bedroom Light
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xl capitalize">State: <span className="font-semibold">{devices.light2}</span></p>
+                 <Progress value={devices.light2 === "on" ? 100 : devices.light2 === "auto" ? 50 : 0} className="mt-2 h-2" />
                 <Link href="/devices">
                   <Button variant="outline" size="sm" className="mt-4">Manage</Button>
                 </Link>
