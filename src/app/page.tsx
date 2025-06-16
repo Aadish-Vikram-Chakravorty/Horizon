@@ -9,9 +9,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge'; // Added Badge import
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import WeatherWidget from '@/components/dashboard/WeatherWidget';
 
 // Helper to get emoji status
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
@@ -123,6 +123,15 @@ export default function HomePage() {
     visible: { opacity: 1, y: 0 },
   };
 
+  const getSeverityText = (severity: AlertContent['severity']) => {
+    switch (severity) {
+      case 'critical': return 'High';
+      case 'warning': return 'Medium';
+      case 'info': return 'Low';
+      default: return 'Unknown';
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <motion.div initial="hidden" animate="visible" variants={cardVariants}>
@@ -146,24 +155,15 @@ export default function HomePage() {
             )}
           </div>
         </motion.div>
-
-        {/* Weather Widget Section */}
-        {sensors && (
-          <motion.div variants={itemVariants} className="mb-8 flex justify-center sm:justify-start">
-            <WeatherWidget
-              temperature={sensors.temperature}
-              humidity={sensors.humidity}
-            />
-          </motion.div>
-        )}
       
         {/* Alerts Section */}
         {alerts.length > 0 && (
           <motion.section variants={itemVariants}>
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
               <ShieldAlert /> Important Alerts
+              <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
             </h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1"> {/* Changed to grid-cols-1 for full width */}
               {alerts.map(alert => (
                 <Card key={alert.id} className={`border-l-4 ${alert.severity === 'critical' ? 'border-destructive' : 'border-yellow-500'}`}>
                   <CardHeader>
@@ -171,7 +171,13 @@ export default function HomePage() {
                       {alert.severity === 'critical' ? <AlertTriangle className="text-destructive"/> : <Activity className="text-yellow-500"/>}
                       {alert.title}
                     </CardTitle>
-                    <CardDescription>{new Date(alert.timestamp).toLocaleString()}</CardDescription>
+                    <CardDescription>
+                      {new Date(alert.timestamp).toLocaleString()}
+                      <br />
+                      Severity: <span className={alert.severity === 'critical' ? 'text-destructive font-semibold' : alert.severity === 'warning' ? 'text-yellow-600 dark:text-yellow-400 font-semibold' : 'font-semibold'}>
+                        {getSeverityText(alert.severity)}
+                      </span>
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>{alert.message}</p>
