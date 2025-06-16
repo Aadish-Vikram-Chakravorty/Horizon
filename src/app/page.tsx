@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import WeatherWidget from '@/components/dashboard/WeatherWidget'; // New import
+import WeatherWidget from '@/components/dashboard/WeatherWidget';
 
 // Helper to get emoji status
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
@@ -132,7 +132,7 @@ export default function HomePage() {
             <h1 className="text-4xl font-bold font-headline text-primary">Welcome Home</h1>
             <p className="text-muted-foreground mt-1">Monitor and control your smart home devices.</p>
           </div>
-          <div className="text-right">
+           <div className="text-right">
             {allSystemsOnline ? (
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <Wifi size={20} />
@@ -153,7 +153,6 @@ export default function HomePage() {
             <WeatherWidget
               temperature={sensors.temperature}
               humidity={sensors.humidity}
-              // Sensible temp, location, etc., are placeholders within the widget
             />
           </motion.div>
         )}

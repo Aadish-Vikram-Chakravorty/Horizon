@@ -1,79 +1,134 @@
 
 "use client";
 
+import React, { useState, useEffect, type FC } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin } from 'lucide-react';
+import { MapPin, Thermometer, Droplets, AlertTriangle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import type { FC } from 'react';
 
 interface WeatherWidgetProps {
   temperature: number;
   humidity: number;
-  // Placeholder data, to be replaced by API data ideally
-  weatherCondition?: string;
-  location?: string;
-  sensibleTempOffset?: number; 
-  windForceDisplayValue?: string; // e.g., "3"
-  pressureDisplayValue?: string; // e.g., "1009hPa"
-  weatherIconSrc?: string; 
-  weatherIconAlt?: string;
+}
+
+interface Coordinates {
+  latitude: number;
+  longitude: number;
 }
 
 const WeatherWidget: FC<WeatherWidgetProps> = ({
   temperature,
   humidity,
-  weatherCondition = "Cloudy",
-  location = "Rajshahi, Bangladesh", // Placeholder from OCR
-  sensibleTempOffset = 3, // To match 31° sensible from 28° main in OCR
-  windForceDisplayValue = "3",    // Placeholder from OCR
-  pressureDisplayValue = "1009hPa", // Placeholder from OCR
-  weatherIconSrc = "https://placehold.co/56x56.png", 
-  weatherIconAlt = "Weather condition icon"
 }) => {
-  const sensibleTemp = temperature + sensibleTempOffset;
+  const [locationName, setLocationName] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(true);
+  // Placeholder for weather icon and condition, as we are not fetching full weather data
+  const weatherCondition = "Weather"; // Generic placeholder
+  const weatherIconSrc = "https://placehold.co/48x48.png"; 
+  const weatherIconAlt = "Weather icon";
+
+  useEffect(() => {
+    const fetchLocationName = async (coords: Coordinates) => {
+      // In a real app, you would use a reverse geocoding API here.
+      // For this prototype, we'll simulate it or use a placeholder.
+      // Example: OpenCage, Google Geocoding API, etc.
+      // const response = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${coords.latitude}+${coords.longitude}&key=YOUR_API_KEY`);
+      // const data = await response.json();
+      // if (data.results && data.results.length > 0) {
+      //   setLocationName(data.results[0].formatted);
+      // } else {
+      //   setLocationName("Unknown location");
+      // }
+      setLocationName(`Lat: ${coords.latitude.toFixed(2)}, Lon: ${coords.longitude.toFixed(2)}`); // Using coordinates for now
+      setIsLoadingLocation(false);
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchLocationName({ latitude, longitude });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setLocationError("Location access denied.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              setLocationError("Location information is unavailable.");
+              break;
+            case error.TIMEOUT:
+              setLocationError("Location request timed out.");
+              break;
+            default:
+              setLocationError("An unknown error occurred.");
+              break;
+          }
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      setLocationError("Geolocation is not supported by this browser.");
+      setIsLoadingLocation(false);
+    }
+  }, []);
 
   return (
-    <Card className="bg-sky-100 dark:bg-sky-800/60 border-sky-200 dark:border-sky-700 shadow-lg w-full max-w-md rounded-xl overflow-hidden">
-      <CardContent className="p-6 text-slate-800 dark:text-slate-100">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center space-x-3">
-            <Image 
+    <Card className="bg-gradient-to-br from-sky-400 to-blue-500 dark:from-sky-700 dark:to-blue-800 shadow-xl w-full max-w-xs rounded-xl overflow-hidden">
+      <CardContent className="p-5 text-white">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-semibold">Current Weather</h3>
+            {isLoadingLocation && (
+              <div className="flex items-center text-sm opacity-80 mt-1">
+                <Loader2 size={14} className="mr-1 animate-spin" />
+                <span>Fetching location...</span>
+              </div>
+            )}
+            {locationName && !isLoadingLocation && (
+              <div className="flex items-center text-sm opacity-90 mt-1">
+                <MapPin size={14} className="mr-1" />
+                <span>{locationName}</span>
+              </div>
+            )}
+            {locationError && !isLoadingLocation && (
+              <div className="flex items-center text-xs text-yellow-300 mt-1 bg-black/20 p-1 rounded">
+                <AlertTriangle size={14} className="mr-1" />
+                <span>{locationError}</span>
+              </div>
+            )}
+          </div>
+           <Image 
               src={weatherIconSrc} 
               alt={weatherIconAlt} 
-              width={56}
-              height={56} 
-              className="rounded-md" 
-              data-ai-hint="weather sun cloud" // Hint for image replacement
+              width={48}
+              height={48} 
+              className="rounded-md opacity-90" 
+              data-ai-hint="weather cloud sun" 
             />
-            <div>
-              <p className="text-2xl font-bold">{weatherCondition}</p>
-              <div className="flex items-center text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                <MapPin size={12} className="mr-1" />
-                <span>{location}</span>
-              </div>
-            </div>
-          </div>
-          <p className="text-5xl font-bold">{Math.round(temperature)}°</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-x-2 text-center">
-          <div className="py-1">
-            <p className="text-xl font-semibold">{Math.round(sensibleTemp)}°</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Sensible</p>
+        <div className="grid grid-cols-2 gap-3 text-center">
+          <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+            <div className="flex items-center justify-center mb-1 opacity-80">
+              <Thermometer size={18} className="mr-1.5" />
+              <span className="text-xs">Temperature</span>
+            </div>
+            <p className="text-2xl font-bold">{Math.round(temperature)}°C</p>
           </div>
-          <div className="py-1">
-            <p className="text-xl font-semibold">{Math.round(humidity)}%</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Humidity</p>
-          </div>
-          <div className="py-1">
-            <p className="text-xl font-semibold">{windForceDisplayValue}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">W. force</p>
-          </div>
-          <div className="py-1">
-            <p className="text-xl font-semibold">{pressureDisplayValue}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Pressure</p>
+          <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
+             <div className="flex items-center justify-center mb-1 opacity-80">
+              <Droplets size={18} className="mr-1.5" />
+              <span className="text-xs">Humidity</span>
+            </div>
+            <p className="text-2xl font-bold">{Math.round(humidity)}%</p>
           </div>
         </div>
+         <p className="text-xs text-center mt-4 opacity-70">
+            Weather condition is a placeholder.
+          </p>
       </CardContent>
     </Card>
   );
