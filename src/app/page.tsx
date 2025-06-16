@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, Thermometer, Droplets, Wind, ShieldAlert, AlertTriangle, Activity, CheckCircle2, XCircle, Zap, CalendarDays, Wifi, WifiOff, BedDouble } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, Wifi, WifiOff, BedDouble, Zap } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls } from '@/types';
@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import WeatherWidget from '@/components/dashboard/WeatherWidget'; // New import
 
 // Helper to get emoji status
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
@@ -82,7 +83,7 @@ export default function HomePage() {
     );
   }
 
-  if (error) {
+  if (error || !appData) { // Ensure appData is checked here as well
     return (
       <Card className="m-auto mt-10 max-w-md border-destructive">
         <CardHeader>
@@ -92,21 +93,19 @@ export default function HomePage() {
         </CardHeader>
         <CardContent>
           <p>Could not load dashboard data. Please check your connection or try again later.</p>
-          <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+          {error && <p className="text-sm text-muted-foreground mt-2">{error.message}</p>}
         </CardContent>
       </Card>
     );
   }
   
-  const sensors = appData?.sensors;
-  const devices = appData?.devices;
+  const sensors = appData.sensors;
+  const devices = appData.devices;
 
   const mainDeviceKeys: (keyof DeviceControls)[] = ['light1', 'lightLDR', 'light2'];
   let onlineDevicesCount = 0;
   if (devices) {
     mainDeviceKeys.forEach(key => {
-      // Consider a device "online" if its status is not "off".
-      // For ldrIntensity, it's a number, so we don't count it as a device status for online/offline count.
       if (key !== 'ldrIntensity' && devices[key] && devices[key] !== 'off') {
         onlineDevicesCount++;
       }
@@ -147,6 +146,17 @@ export default function HomePage() {
             )}
           </div>
         </motion.div>
+
+        {/* Weather Widget Section */}
+        {sensors && (
+          <motion.div variants={itemVariants} className="mb-8 flex justify-center sm:justify-start">
+            <WeatherWidget
+              temperature={sensors.temperature}
+              humidity={sensors.humidity}
+              // Sensible temp, location, etc., are placeholders within the widget
+            />
+          </motion.div>
+        )}
       
         {/* Alerts Section */}
         {alerts.length > 0 && (
