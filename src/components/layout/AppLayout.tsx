@@ -16,9 +16,9 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings, Menu } from 'lucide-react'; 
+import { Home, Gauge, Settings, Menu, LayoutDashboard } from 'lucide-react'; 
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
+// import Image from 'next/image'; // No longer needed for logo
 
 interface NavItem {
   href: string;
@@ -46,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r border-border/50">
         <SidebarHeader className="p-4 flex items-center gap-2">
-           <Image src="https://placehold.co/40x40.png" alt="Horizon Hub Logo" width={32} height={32} className="rounded-md" data-ai-hint="logo abstract" />
+           <LayoutDashboard className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-semibold font-headline group-data-[collapsible=icon]:hidden">Horizon Hub</h1>
         </SidebarHeader>
         <SidebarContent>
@@ -93,3 +93,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
