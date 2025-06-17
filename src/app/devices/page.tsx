@@ -67,8 +67,8 @@ export default function DevicesPage() {
             displayName="LDR Smart Light"
             icon={Zap} 
             showAutoOption={true}
-            disableStatusControls={true} // Make radio buttons display-only
-            hideIntensitySlider={true}  // Hide the intensity slider
+            hideIntensitySlider={true} // Hide the linear slider
+            showDisplayOnlyRadialIntensity={true} // Show the new radial display
           />
           <LightControl
             lightId="light2" 
@@ -83,3 +83,4 @@ export default function DevicesPage() {
     </div>
   );
 }
+
