@@ -305,7 +305,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 min-h-[180px] flex flex-col justify-center">
               <AnimatedLightControl
                 lightId="light1"
                 displayName="Living Room Light"
@@ -313,13 +313,13 @@ export default function HomePage() {
               />
             </Card>
             
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 min-h-[180px] flex flex-col justify-center">
+              <CardHeader className="pt-4 pb-2">
+                <CardTitle className="flex items-center justify-center gap-2 text-base font-medium">
                   <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : "text-muted-foreground"} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center">
+              <CardContent className="space-y-3 flex flex-col items-center pt-2 pb-4">
                 <div className="flex space-x-2">
                 {(['on', 'off', 'auto'] as LightStatus[]).map((status) => (
                   <Button
@@ -340,7 +340,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 min-h-[180px] flex flex-col justify-center">
               <AnimatedLightControl
                 lightId="light2"
                 displayName="Bedroom Light"

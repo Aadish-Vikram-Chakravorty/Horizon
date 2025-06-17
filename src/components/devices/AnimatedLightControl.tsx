@@ -57,7 +57,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
 
   const darkLightBarVariants = {
     on: {
-      backgroundColor: "rgba(250, 204, 21, 1)", // Bright yellow
+      backgroundColor: "rgba(250, 204, 21, 1)", // Bright yellow for dark mode too
       borderColor: "rgba(234, 179, 8, 1)", 
       boxShadow: "0 0 30px 12px rgba(250, 204, 21, 0.8)", // Much brighter yellow glow
       scale: 1.03,
@@ -81,9 +81,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
 
   return (
     <div className={cn("flex flex-col items-center justify-center min-h-[180px] pt-2 pb-4 text-center", className)}>
-      <div className="flex items-center gap-2 mb-3 text-card-foreground">
+      <div className="flex items-center justify-center gap-2 mb-3 text-card-foreground">
         <IconComponent className="w-5 h-5 text-primary" />
-        <span className="font-medium">{displayName}</span>
+        <span className="font-medium text-base">{displayName}</span>
       </div>
       <motion.div
         className="relative flex flex-col items-center cursor-pointer group"
@@ -135,4 +135,3 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
 };
 
 export default AnimatedLightControl;
-
