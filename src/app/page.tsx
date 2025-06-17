@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa, Thermometer, Droplets, Waves, Sun, Flame } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls, LightStatus } from '@/types';
@@ -21,23 +21,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AnimatedLightControl from '@/components/devices/AnimatedLightControl';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
   switch (key) {
     case 'temperature':
-      return `${value}°C 🌡️`;
+      return `${value}°C`;
     case 'humidity':
-      return `${value}% 💧`;
+      return `${value}%`;
     case 'soilMoisture':
-      return value < 10 ? `${value}% ⚠️🌱` : `${value}% 🌱`;
+      return value < 10 ? `${value}% ⚠️` : `${value}%`;
     case 'waterLevel':
-      return `${value}% 🌊`;
+      return `${value}%`;
     case 'ldrBrightness':
-      return value > 500 ? 'Bright 💡' : 'Dim 💡';
+      return value > 500 ? 'Bright' : 'Dim';
     case 'flameDetected':
       return value ? 'Detected 🔥' : 'Safe ✅';
     case 'waterShortage':
@@ -100,24 +98,11 @@ export default function HomePage() {
       await updateLightStatus('lightLDR', newStatus);
     } catch (err) {
       console.error('Failed to update lightLDR', err);
-      // Add toast error if needed
     } finally {
       setIsUpdatingLightLDR(false);
     }
   };
   
-  const handleLDRSwitchChange = (checked: boolean) => {
-    handleLDRLightUpdate(checked ? 'on' : 'off');
-  };
-
-  const handleLDRAutoToggle = () => {
-    if (devices?.lightLDR === 'auto') {
-      handleLDRLightUpdate('off'); 
-    } else {
-      handleLDRLightUpdate('auto'); 
-    }
-  };
-
 
   if (loading) {
     return (
@@ -154,7 +139,7 @@ export default function HomePage() {
     mainDeviceKeys.forEach(key => {
       if (key !== 'ldrIntensity') { 
         const deviceStatus = devices[key];
-        const isOnline = deviceStatus && (deviceStatus === 'on' || deviceStatus === 'auto');
+        const isOnline = deviceStatus && (deviceStatus !== 'off'); // 'on' or 'auto' means online
         if (isOnline) {
           onlineDevicesCount++;
         }
@@ -169,7 +154,7 @@ export default function HomePage() {
     });
   }
   
-  const onlineDeviceItems = deviceList.filter(device => device.status && (device.status === 'on' || device.status === 'auto'));
+  const onlineDeviceItems = deviceList.filter(device => device.status && (device.status !== 'off'));
 
 
   const cardVariants = {
@@ -196,6 +181,19 @@ export default function HomePage() {
       case 'warning': return 'secondary'; 
       case 'info': return 'outline';
       default: return 'default';
+    }
+  };
+
+  const getSensorIcon = (key: keyof SensorReadings): React.ElementType => {
+    switch (key) {
+      case 'temperature': return Thermometer;
+      case 'humidity': return Droplets;
+      case 'soilMoisture': return Leaf;
+      case 'waterLevel': return Waves;
+      case 'ldrBrightness': return Sun;
+      case 'flameDetected': return Flame;
+      case 'waterShortage': return Zap;
+      default: return Activity;
     }
   };
 
@@ -279,16 +277,22 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Sensor Status</h2>
           {sensors ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {(Object.keys(sensors) as Array<keyof SensorReadings>).map(key => (
+              {(Object.keys(sensors) as Array<keyof SensorReadings>).map(key => {
+                const IconComponent = getSensorIcon(key);
+                return (
                 <Card key={key} className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
                   <CardHeader>
-                    <CardTitle className="text-base capitalize">{key.replace(/([A-Z])/g, ' $1')}</CardTitle>
+                    <CardTitle className="text-base capitalize flex items-center gap-2">
+                       <IconComponent className="w-4 h-4 text-primary" />
+                      {key.replace(/([A-Z])/g, ' $1')}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="text-2xl font-semibold text-primary">
                     {getEmojiStatus(key, sensors[key], sensors)}
                   </CardContent>
                 </Card>
-              ))}
+              );
+            })}
             </div>
           ) : (
             <p>No sensor data available.</p>
@@ -299,7 +303,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
               <AnimatedLightControl
                 lightId="light1"
                 displayName="Living Room Light"
@@ -318,45 +322,29 @@ export default function HomePage() {
                   <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : ""} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 justify-center">
-                  <span className={cn(
-                    "text-sm select-none", 
-                    devices.lightLDR === 'on' && devices.lightLDR !== 'auto' ? 'font-semibold text-primary' : 'text-muted-foreground'
-                  )}>
-                    ON
-                  </span>
-                  <Switch
-                    id="ldr-on-off-switch"
-                    checked={devices.lightLDR === 'on'}
-                    onCheckedChange={handleLDRSwitchChange}
-                    disabled={isUpdatingLightLDR || devices.lightLDR === 'auto'}
-                    aria-label="Toggle LDR Smart Light On or Off"
-                  />
-                  <span className={cn(
-                    "text-sm select-none", 
-                    devices.lightLDR === 'off' && devices.lightLDR !== 'auto' ? 'font-semibold text-primary' : 'text-muted-foreground'
-                  )}>
-                    OFF
-                  </span>
+              <CardContent className="space-y-3 flex flex-col items-center">
+                <div className="flex space-x-2">
+                  {(['on', 'off', 'auto'] as LightStatus[]).map((status) => (
+                    <Button
+                      key={status}
+                      variant={devices.lightLDR === status ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleLDRLightUpdate(status)}
+                      disabled={isUpdatingLightLDR}
+                      className="capitalize w-20"
+                    >
+                      {isUpdatingLightLDR && devices.lightLDR === status && <LoadingSpinner size={16} className="mr-1" />}
+                      {status}
+                    </Button>
+                  ))}
                 </div>
-                <Button
-                  variant={devices.lightLDR === 'auto' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={handleLDRAutoToggle}
-                  disabled={isUpdatingLightLDR}
-                  className="w-full"
-                >
-                  {isUpdatingLightLDR && <LoadingSpinner size={16} className="mr-1" />}
-                  {devices.lightLDR === 'auto' ? 'Auto Mode Active' : 'Enable Auto Mode'}
-                </Button>
-                 <Link href="/devices">
-                   <Button variant="link" size="sm" className="text-xs px-0 w-full justify-center">Advanced Settings</Button>
+                 <Link href="/devices" className="w-full flex justify-center">
+                   <Button variant="link" size="sm" className="text-xs px-0 mt-2">Advanced Settings</Button>
                  </Link>
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
               <AnimatedLightControl
                 lightId="light2"
                 displayName="Bedroom Light"
@@ -378,4 +366,3 @@ export default function HomePage() {
     </div>
   );
 }
-

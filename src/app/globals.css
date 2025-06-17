@@ -32,7 +32,7 @@ body {
     --chart-3: 177 50% 60%;
     --chart-4: 197 50% 70%;
     --chart-5: 177 30% 70%;
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Increased for more rounded corners */
 
     /* Sidebar specific theme variables - can be adjusted if needed */
     --sidebar-background: 0 0% 98%; /* Default light sidebar */

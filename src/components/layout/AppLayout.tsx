@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings, Menu, CalendarDays, Bot } from 'lucide-react'; // Added Bot
+import { Home, Gauge, Settings, Menu, Bot } from 'lucide-react'; // Removed CalendarDays
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/sensors', label: 'Sensors Data', icon: Gauge },
   { href: '/devices', label: 'Devices', icon: Settings },
+  // { href: '/ai-insights', label: 'AI Insights', icon: Bot }, // Commented out as per previous instructions
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -65,6 +66,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuItem>
             ))}
+             <SidebarMenuItem>
+                <Link href="/ai-insights">
+                  <SidebarMenuButton
+                    isActive={pathname === '/ai-insights'}
+                    tooltip={{ children: "AI Insights", side: 'right', className: "ml-2" }}
+                    className="justify-start"
+                  >
+                    <Bot className="h-5 w-5" />
+                    <span className="group-data-[collapsible=icon]:hidden">AI Insights</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 mt-auto">
@@ -80,8 +93,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             {currentDateString && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CalendarDays size={16}/> {currentDateString}
+              <div className="text-sm text-muted-foreground">
+                {currentDateString}
               </div>
             )}
           </div>
