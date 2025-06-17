@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle }  from '@/co
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Sun, AlertTriangle, Settings } from 'lucide-react';
+import { Lightbulb, Sun, AlertTriangle, Settings, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { LightStatus } from '@/types';
+import DisplayOnlyRadialGauge from '@/components/devices/DisplayOnlyRadialGauge';
 
 export default function DevicesPage() {
-  const { appData, loading, error, updateLightStatus } = useFirebaseData();
+  const { appData, loading, error, updateLightStatus, updateLDRIntensity } = useFirebaseData();
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
   const handleLightToggle = async (lightId: 'light1' | 'light2' , newCheckedState: boolean) => {
@@ -50,6 +51,18 @@ export default function DevicesPage() {
       setIsLoading(prev => ({ ...prev, lightLDRSwitch: false }));
     }
   };
+  
+  const handleLDRIntensityCommit = async (newIntensityArray: number[]) => {
+    setIsLoading(prev => ({ ...prev, ldrIntensity: true }));
+    try {
+      await updateLDRIntensity(newIntensityArray[0]);
+    } catch (err) {
+      console.error('Failed to update LDR intensity', err);
+    } finally {
+      setIsLoading(prev => ({ ...prev, ldrIntensity: false }));
+    }
+  };
+
 
   if (loading && !appData) { // Show global loading only if appData isn't there yet
     return (
@@ -94,6 +107,33 @@ export default function DevicesPage() {
   const devices = appData.devices;
   const sensors = appData.sensors;
 
+  const totalLights = Object.keys(devices).filter(key => key.startsWith('light')).length;
+  const activeDevices = Object.values(devices).filter(status => status === 'on' || status === 'auto').length;
+  const autoDevices = devices.lightLDR === 'auto' ? 1 : 0;
+
+
+  const SummaryCard = ({ icon: Icon, title, value, iconBgColor, titleColor, valueColor }: {
+    icon: React.ElementType,
+    title: string,
+    value: string | number,
+    iconBgColor: string,
+    titleColor: string,
+    valueColor: string
+  }) => (
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <CardContent className="flex items-center space-x-4 p-4">
+        <div className={`p-3 rounded-lg ${iconBgColor}`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+        <div>
+          <p className={`text-sm font-medium ${titleColor}`}>{title}</p>
+          <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+
   return (
     <motion.div 
       className="container mx-auto p-4 space-y-10"
@@ -101,6 +141,34 @@ export default function DevicesPage() {
       initial="hidden"
       animate="visible"
     >
+      {/* Summary Cards */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <SummaryCard
+          icon={Lightbulb}
+          title="Total Lights"
+          value={totalLights}
+          iconBgColor="bg-blue-500 dark:bg-blue-700"
+          titleColor="text-purple-600 dark:text-purple-400"
+          valueColor="text-yellow-500 dark:text-yellow-400"
+        />
+        <SummaryCard
+          icon={Zap}
+          title="Active Devices"
+          value={activeDevices}
+          iconBgColor="bg-teal-500 dark:bg-teal-700"
+          titleColor="text-purple-600 dark:text-purple-400"
+          valueColor="text-yellow-500 dark:text-yellow-400"
+        />
+        <SummaryCard
+          icon={Settings}
+          title="Auto Devices"
+          value={autoDevices}
+          iconBgColor="bg-orange-500 dark:bg-orange-700"
+          titleColor="text-purple-600 dark:text-purple-400"
+          valueColor="text-yellow-500 dark:text-yellow-400"
+        />
+      </motion.div>
+
       <div>
         <motion.h2 variants={itemVariants} className="text-2xl font-semibold mb-4 flex items-center text-primary">
           <Lightbulb className="mr-3 h-6 w-6" />
@@ -157,7 +225,7 @@ export default function DevicesPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="flex flex-row justify-between items-center">
               <div className="flex items-center space-x-3">
-                <Sun className="h-8 w-8 text-purple-500" />
+                <Sun className="h-8 w-8 text-purple-500" /> {/* Consider a more specific "auto" icon if available */}
                 <div>
                   <CardTitle className="text-lg">Auto Light (LDR Controlled)</CardTitle>
                   <CardDescription className="capitalize">{devices.lightLDR}</CardDescription>
@@ -185,6 +253,17 @@ export default function DevicesPage() {
                   </Button>
                 ))}
               </div>
+              {devices.lightLDR === 'auto' && (
+                <div className="mt-4 flex justify-center">
+                   <DisplayOnlyRadialGauge
+                      value={devices.ldrIntensity ?? 50}
+                      label="Intensity Setting"
+                      min={0}
+                      max={100}
+                      unit="%"
+                    />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -202,13 +281,17 @@ export default function DevicesPage() {
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Current Brightness:</span>
-                <span className="font-medium text-primary">{sensors.ldrBrightness}{typeof sensors.ldrBrightness === 'number' ? '%' : ''}</span>
+                <span className="font-medium text-primary">{sensors.ldrBrightness}{typeof sensors.ldrBrightness === 'number' ? ' lux' : ''}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Mode:</span>
                 <Badge variant={devices.lightLDR === 'auto' ? 'default' : 'secondary'} className="capitalize">
                   {devices.lightLDR}
                 </Badge>
+              </div>
+               <div className="flex justify-between">
+                <span>Intensity Setting:</span>
+                <span className="font-medium text-primary">{devices.ldrIntensity ?? 50}%</span>
               </div>
               <div className="flex justify-between">
                 <span>Auto Threshold:</span>
@@ -221,3 +304,4 @@ export default function DevicesPage() {
     </motion.div>
   );
 }
+
