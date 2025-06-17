@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa, Thermometer, Droplets, Waves, Sun, Flame } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -36,7 +36,7 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
     case 'waterLevel':
       return `${value}%`;
     case 'ldrBrightness':
-      return value > 500 ? 'Bright' : 'Dim'; // Or just return the value if units are preferred
+      return value > 500 ? 'Bright' : 'Dim'; 
     case 'flameDetected':
       return value ? 'Detected' : 'Safe';
     case 'waterShortage':
@@ -50,8 +50,6 @@ export default function HomePage() {
   const { appData, loading, error, updateLightStatus } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
   const [isUpdatingLightLDR, setIsUpdatingLightLDR] = useState(false);
-  const [isLDRSwitchUpdating, setIsLDRSwitchUpdating] = useState(false);
-  const [isLDRAutoUpdating, setIsLDRAutoUpdating] = useState(false);
 
 
   useEffect(() => {
@@ -98,16 +96,12 @@ export default function HomePage() {
 
   const handleLDRLightStatusChange = async (newStatus: LightStatus) => {
     setIsUpdatingLightLDR(true);
-    setIsLDRSwitchUpdating(newStatus === 'on' || newStatus === 'off');
-    setIsLDRAutoUpdating(newStatus === 'auto');
     try {
       await updateLightStatus('lightLDR', newStatus);
     } catch (err) {
       console.error('Failed to update lightLDR', err);
     } finally {
       setIsUpdatingLightLDR(false);
-      setIsLDRSwitchUpdating(false);
-      setIsLDRAutoUpdating(false);
     }
   };
   
@@ -317,17 +311,12 @@ export default function HomePage() {
                 displayName="Living Room Light"
                 IconComponent={Sofa}
               />
-               <CardFooter className="justify-center pb-3 pt-0">
-                 <Link href="/devices">
-                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
-                 </Link>
-               </CardFooter>
             </Card>
             
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : ""} /> LDR Smart Light
+                  <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : "text-muted-foreground"} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 flex flex-col items-center">
@@ -338,13 +327,10 @@ export default function HomePage() {
                     variant={devices.lightLDR === status ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => handleLDRLightStatusChange(status)}
-                    disabled={
-                      (isLDRSwitchUpdating && (status === 'on' || status === 'off')) ||
-                      (isLDRAutoUpdating && status === 'auto')
-                    }
+                    disabled={isUpdatingLightLDR && devices.lightLDR === status}
                     className="capitalize w-20"
                   >
-                    {(isLDRSwitchUpdating && (status === 'on' || status === 'off')) || (isLDRAutoUpdating && status === 'auto') ? (
+                    {isUpdatingLightLDR && devices.lightLDR === status ? (
                       <LoadingSpinner size={16} className="mr-1" />
                     ) : null}
                     {status}
@@ -363,11 +349,6 @@ export default function HomePage() {
                 displayName="Bedroom Light"
                 IconComponent={BedDouble}
               />
-              <CardFooter className="justify-center pb-3 pt-0">
-                 <Link href="/devices">
-                   <Button variant="link" size="sm" className="text-xs px-0">Advanced Settings</Button>
-                 </Link>
-              </CardFooter>
             </Card>
 
           </div>

@@ -57,9 +57,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
 
   const darkBulbVariants = {
     on: {
-      backgroundColor: "rgba(250, 204, 21, 1)",
-      borderColor: "rgba(234, 179, 8, 1)",
-      boxShadow: "0 0 20px 8px rgba(250, 204, 21, 0.6)",
+      backgroundColor: "rgba(255, 255, 245, 1)", // Ivory/off-white
+      borderColor: "rgba(240, 240, 230, 1)", // Slightly darker ivory/beige
+      boxShadow: "0 0 20px 8px rgba(255, 255, 245, 0.7)", // Ivory/off-white glow
       scale: 1.03,
     },
     off: {
@@ -109,13 +109,13 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       >
         <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-10 group-hover:bg-primary transition-colors"></div>
         <motion.div
-          className="relative w-12 h-12 rounded-full" // Removed border-2 from here
+          className="relative w-12 h-12 rounded-full"
           transition={{ duration: 0.2, ease: "circOut" }}
           animate={getBulbAnimationState()} 
         >
           <div className="dark:hidden">
             <motion.div
-              className="w-full h-full rounded-full border-2" // Added border-2 here
+              className="w-full h-full rounded-full border-2"
               variants={bulbVariants}
               animate={getBulbAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
@@ -123,7 +123,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
           </div>
           <div className="hidden dark:block">
             <motion.div
-              className="w-full h-full rounded-full border-2" // Added border-2 here
+              className="w-full h-full rounded-full border-2"
               variants={darkBulbVariants}
               animate={getBulbAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
@@ -140,9 +140,8 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
                 {Array.from({ length: 12 }).map((_, i) => (
                   <motion.div
                     key={i}
-                    className="absolute w-[3px] h-12 origin-center"
+                    className="absolute w-[3px] h-12 origin-center bg-[rgba(250,204,21,0.55)] dark:bg-[rgba(255,255,245,0.6)]"
                     style={{
-                      backgroundColor: 'rgba(250, 204, 21, 0.55)', 
                       transform: `rotate(${i * 30}deg) translateY(-22px)`,
                       borderRadius: '3px',
                     }}
