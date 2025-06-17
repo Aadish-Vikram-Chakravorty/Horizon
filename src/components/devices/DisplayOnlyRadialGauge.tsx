@@ -18,7 +18,7 @@ interface DisplayOnlyRadialGaugeProps {
 
 // Helper functions for SVG arc
 function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
-  var angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+  var angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0; // -90 degrees to start from top
   return {
     x: centerX + radius * Math.cos(angleInRadians),
     y: centerY + radius * Math.sin(angleInRadians),
@@ -26,12 +26,28 @@ function polarToCartesian(centerX: number, centerY: number, radius: number, angl
 }
 
 function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
-  var start = polarToCartesian(x, y, radius, endAngle);
-  var end = polarToCartesian(x, y, radius, startAngle);
-  var largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-  var d = ['M', start.x, start.y, 'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y].join(' ');
+  var start = polarToCartesian(x, y, radius, startAngle); // Point to Move to
+  var end = polarToCartesian(x, y, radius, endAngle);     // Point to Arc to
+
+  var largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  var sweepFlag = "1"; // 1 for clockwise
+
+  // Ensure endAngle doesn't exactly equal startAngle if trying to draw a full circle from 0 to 360,
+  // as that can cause rendering issues. A value very close to 360 is preferred for a full segment.
+  // However, for partial arcs, if endAngle is truly 0 (for a 0 value), start and end points will be the same.
+  if (startAngle === 0 && endAngle >= 359.99) { // Covers the full circle case explicitly for a complete segment
+    endAngle = 359.999; // Prevents closing the path in a way that makes it disappear
+  }
+
+
+  var d = [
+      "M", start.x, start.y,
+      "A", radius, radius, 0, largeArcFlag, sweepFlag, end.x, end.y
+  ].join(" ");
+
   return d;
 }
+
 
 const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
   value,
@@ -47,9 +63,13 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
   const normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
   const center = size / 2;
 
+  // Calculate the end angle for the arc. 359.99 to avoid issues with full 360.
+  const valueArcEndAngle = normalizedValue * 359.99;
+
+
   const majorTickValues = [0, 25, 50, 75, 100];
   const minorTickIncrement = 5;
-  const numMinorTicks = max / minorTickIncrement; // Total potential minor ticks up to max
+  const numMinorTicks = max / minorTickIncrement;
 
   return (
     <motion.div
@@ -71,21 +91,20 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
           />
           {/* Value arc - starts from 0 degrees (top) and goes clockwise */}
           <motion.path
-            d={describeArc(center, center, radius, 0, normalizedValue * 359.99)} 
+            d={describeArc(center, center, radius, 0, valueArcEndAngle)}
             stroke="hsl(var(--primary))"
             strokeWidth={strokeWidth}
             fill="transparent"
             strokeLinecap="round"
             initial={{ pathLength: 0 }}
-            animate={{ pathLength: normalizedValue }}
+            animate={{ pathLength: normalizedValue }} // Animate based on the normalized value
             transition={{ duration: 1, ease: "circOut" }}
           />
 
           {/* Minor Ticks */}
           {Array.from({ length: numMinorTicks }).map((_, i) => {
             const tickVal = (i + 1) * minorTickIncrement;
-            // Skip if it's exactly a major tick value or exceeds max (though max is handled by numMinorTicks)
-            if (tickVal >= max || majorTickValues.includes(tickVal)) return null; 
+            if (tickVal >= max || majorTickValues.includes(tickVal)) return null;
             
             const angle = (tickVal / max) * 360;
             const start = polarToCartesian(center, center, radius - strokeWidth / 2 + 2, angle);
@@ -106,7 +125,6 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
           {/* Major Ticks (Lines Only) */}
           {majorTickValues.map(val => {
             const angle = (val / max) * 360;
-            // Make major ticks slightly longer or more prominent
             const tickStartOuter = polarToCartesian(center, center, radius - strokeWidth / 2, angle);
             const tickEndOuter = polarToCartesian(center, center, radius + strokeWidth / 2, angle);
 
