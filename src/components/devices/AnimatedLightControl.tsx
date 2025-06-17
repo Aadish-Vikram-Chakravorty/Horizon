@@ -44,7 +44,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     on: {
       backgroundColor: "rgba(250, 204, 21, 1)", // Bright yellow
       borderColor: "rgba(234, 179, 8, 1)", 
-      boxShadow: "0 0 30px 12px rgba(250, 204, 21, 0.8)", // Much brighter yellow glow
+      boxShadow: "0 0 30px 12px rgba(250, 204, 21, 1)", // Much brighter yellow glow, alpha set to 1
       scale: 1.03,
     },
     off: {
@@ -59,7 +59,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     on: {
       backgroundColor: "rgba(250, 204, 21, 1)", // Bright yellow for dark mode too
       borderColor: "rgba(234, 179, 8, 1)", 
-      boxShadow: "0 0 30px 12px rgba(250, 204, 21, 0.8)", // Much brighter yellow glow
+      boxShadow: "0 0 30px 12px rgba(250, 204, 21, 1)", // Much brighter yellow glow, alpha set to 1
       scale: 1.03,
     },
     off: {
