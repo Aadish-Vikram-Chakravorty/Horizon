@@ -39,19 +39,17 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
   min = 0,
   max = 100,
   unit = '%',
-  size = 160, // Slightly smaller default for embedding
+  size = 160,
   strokeWidth = 10,
   className,
 }) => {
   const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
   const normalizedValue = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  const offset = circumference * (1 - normalizedValue);
   const center = size / 2;
 
-  const majorTicks = [0, 25, 50, 75, 100];
+  const majorTickValues = [0, 25, 50, 75, 100];
   const minorTickIncrement = 5;
-  const numMinorTicks = max / minorTickIncrement;
+  const numMinorTicks = max / minorTickIncrement; // Total potential minor ticks up to max
 
   return (
     <motion.div
@@ -71,9 +69,9 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
             strokeWidth={strokeWidth}
             fill="transparent"
           />
-          {/* Value arc */}
+          {/* Value arc - starts from 0 degrees (top) and goes clockwise */}
           <motion.path
-            d={describeArc(center, center, radius, 0, normalizedValue * 359.99)} // Use path for open arc
+            d={describeArc(center, center, radius, 0, normalizedValue * 359.99)} 
             stroke="hsl(var(--primary))"
             strokeWidth={strokeWidth}
             fill="transparent"
@@ -86,10 +84,12 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
           {/* Minor Ticks */}
           {Array.from({ length: numMinorTicks }).map((_, i) => {
             const tickVal = (i + 1) * minorTickIncrement;
-            if (tickVal >= max || majorTicks.includes(tickVal)) return null; // Skip if it's a major tick or exceeds max
+            // Skip if it's exactly a major tick value or exceeds max (though max is handled by numMinorTicks)
+            if (tickVal >= max || majorTickValues.includes(tickVal)) return null; 
+            
             const angle = (tickVal / max) * 360;
-            const start = polarToCartesian(center, center, radius - strokeWidth / 2 + 1, angle);
-            const end = polarToCartesian(center, center, radius + strokeWidth / 2 - 1, angle);
+            const start = polarToCartesian(center, center, radius - strokeWidth / 2 + 2, angle);
+            const end = polarToCartesian(center, center, radius + strokeWidth / 2 - 2, angle);
             return (
               <line
                 key={`minor-${i}`}
@@ -99,46 +99,27 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
                 y2={end.y}
                 stroke="hsl(var(--border))"
                 strokeWidth="1"
-                transform={`rotate(90 ${center} ${center})`} // Correct rotation for ticks
               />
             );
           })}
 
-          {/* Major Ticks and Labels */}
-          {majorTicks.map(val => {
+          {/* Major Ticks (Lines Only) */}
+          {majorTickValues.map(val => {
             const angle = (val / max) * 360;
-            const tickStartOuter = polarToCartesian(center, center, radius + strokeWidth / 2, angle);
-            const tickEndOuter = polarToCartesian(center, center, radius + strokeWidth / 2 - 5, angle); // Length of major tick
-            const labelPos = polarToCartesian(center, center, radius - strokeWidth /2 - 10, angle); // Position for labels
+            // Make major ticks slightly longer or more prominent
+            const tickStartOuter = polarToCartesian(center, center, radius - strokeWidth / 2, angle);
+            const tickEndOuter = polarToCartesian(center, center, radius + strokeWidth / 2, angle);
 
             return (
-              <React.Fragment key={`major-${val}`}>
+              <React.Fragment key={`major-line-${val}`}>
                 <line
                   x1={tickStartOuter.x}
                   y1={tickStartOuter.y}
                   x2={tickEndOuter.x}
                   y2={tickEndOuter.y}
-                  stroke="hsl(var(--foreground))"
-                  strokeWidth="2"
-                  transform={`rotate(90 ${center} ${center})`} // Correct rotation for ticks
+                  stroke="hsl(var(--foreground))" 
+                  strokeWidth="2" 
                 />
-                <text
-                  x={labelPos.x}
-                  y={labelPos.y}
-                  dy="0.35em"
-                  textAnchor="middle"
-                  fontSize="10"
-                  fill="hsl(var(--foreground))"
-                  transform={`rotate(${angle} ${labelPos.x} ${labelPos.y}) rotate(90 ${center} ${center})`} // Rotate label with tick, then counter-rotate text part if needed (complex)
-                  // Simpler: keep labels upright relative to viewer, adjust positioning
-                  // For simplicity, direct text rendering, may need fine-tuning
-                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-                  transform={`rotate(${angle} ${labelPos.x} ${labelPos.y})`}
-                >
-                <tspan transform={`rotate(${-angle} ${labelPos.x} ${labelPos.y})`}>
-                  {val}
-                </tspan>
-                </text>
               </React.Fragment>
             );
           })}
