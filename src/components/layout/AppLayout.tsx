@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings, Menu, Bot } from 'lucide-react'; // Removed CalendarDays
+import { Home, Gauge, Settings, Menu } from 'lucide-react'; 
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
@@ -30,7 +30,6 @@ const navItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/sensors', label: 'Sensors Data', icon: Gauge },
   { href: '/devices', label: 'Devices', icon: Settings },
-  // { href: '/ai-insights', label: 'AI Insights', icon: Bot }, // Commented out as per previous instructions
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -66,18 +65,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuItem>
             ))}
-             <SidebarMenuItem>
-                <Link href="/ai-insights">
-                  <SidebarMenuButton
-                    isActive={pathname === '/ai-insights'}
-                    tooltip={{ children: "AI Insights", side: 'right', className: "ml-2" }}
-                    className="justify-start"
-                  >
-                    <Bot className="h-5 w-5" />
-                    <span className="group-data-[collapsible=icon]:hidden">AI Insights</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-4 mt-auto">

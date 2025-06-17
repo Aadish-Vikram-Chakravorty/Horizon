@@ -21,7 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AnimatedLightControl from '@/components/devices/AnimatedLightControl';
-import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sensors: SensorReadings): string => {
@@ -31,15 +32,15 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
     case 'humidity':
       return `${value}%`;
     case 'soilMoisture':
-      return value < 10 ? `${value}% ⚠️` : `${value}%`;
+      return `${value}%`;
     case 'waterLevel':
       return `${value}%`;
     case 'ldrBrightness':
-      return value > 500 ? 'Bright' : 'Dim';
+      return value > 500 ? 'Bright' : 'Dim'; // Or just return the value if units are preferred
     case 'flameDetected':
-      return value ? 'Detected 🔥' : 'Safe ✅';
+      return value ? 'Detected' : 'Safe';
     case 'waterShortage':
-      return value ? 'Shortage 🚱' : 'Available ✅';
+      return value ? 'Shortage' : 'Available';
     default:
       return String(value);
   }
@@ -49,6 +50,9 @@ export default function HomePage() {
   const { appData, loading, error, updateLightStatus } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
   const [isUpdatingLightLDR, setIsUpdatingLightLDR] = useState(false);
+  const [isLDRSwitchUpdating, setIsLDRSwitchUpdating] = useState(false);
+  const [isLDRAutoUpdating, setIsLDRAutoUpdating] = useState(false);
+
 
   useEffect(() => {
     if (appData?.sensors) {
@@ -92,14 +96,18 @@ export default function HomePage() {
     }
   }, [appData]);
 
-  const handleLDRLightUpdate = async (newStatus: LightStatus) => {
+  const handleLDRLightStatusChange = async (newStatus: LightStatus) => {
     setIsUpdatingLightLDR(true);
+    setIsLDRSwitchUpdating(newStatus === 'on' || newStatus === 'off');
+    setIsLDRAutoUpdating(newStatus === 'auto');
     try {
       await updateLightStatus('lightLDR', newStatus);
     } catch (err) {
       console.error('Failed to update lightLDR', err);
     } finally {
       setIsUpdatingLightLDR(false);
+      setIsLDRSwitchUpdating(false);
+      setIsLDRAutoUpdating(false);
     }
   };
   
@@ -139,7 +147,7 @@ export default function HomePage() {
     mainDeviceKeys.forEach(key => {
       if (key !== 'ldrIntensity') { 
         const deviceStatus = devices[key];
-        const isOnline = deviceStatus && (deviceStatus !== 'off'); // 'on' or 'auto' means online
+        const isOnline = deviceStatus && (deviceStatus !== 'off');
         if (isOnline) {
           onlineDevicesCount++;
         }
@@ -303,7 +311,7 @@ export default function HomePage() {
           <h2 className="text-2xl font-semibold mb-4">Device Controls</h2>
           {devices ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <AnimatedLightControl
                 lightId="light1"
                 displayName="Living Room Light"
@@ -324,19 +332,24 @@ export default function HomePage() {
               </CardHeader>
               <CardContent className="space-y-3 flex flex-col items-center">
                 <div className="flex space-x-2">
-                  {(['on', 'off', 'auto'] as LightStatus[]).map((status) => (
-                    <Button
-                      key={status}
-                      variant={devices.lightLDR === status ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleLDRLightUpdate(status)}
-                      disabled={isUpdatingLightLDR}
-                      className="capitalize w-20"
-                    >
-                      {isUpdatingLightLDR && devices.lightLDR === status && <LoadingSpinner size={16} className="mr-1" />}
-                      {status}
-                    </Button>
-                  ))}
+                {(['on', 'off', 'auto'] as LightStatus[]).map((status) => (
+                  <Button
+                    key={status}
+                    variant={devices.lightLDR === status ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleLDRLightStatusChange(status)}
+                    disabled={
+                      (isLDRSwitchUpdating && (status === 'on' || status === 'off')) ||
+                      (isLDRAutoUpdating && status === 'auto')
+                    }
+                    className="capitalize w-20"
+                  >
+                    {(isLDRSwitchUpdating && (status === 'on' || status === 'off')) || (isLDRAutoUpdating && status === 'auto') ? (
+                      <LoadingSpinner size={16} className="mr-1" />
+                    ) : null}
+                    {status}
+                  </Button>
+                ))}
                 </div>
                  <Link href="/devices" className="w-full flex justify-center">
                    <Button variant="link" size="sm" className="text-xs px-0 mt-2">Advanced Settings</Button>
@@ -344,7 +357,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 overflow-hidden">
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70">
               <AnimatedLightControl
                 lightId="light2"
                 displayName="Bedroom Light"

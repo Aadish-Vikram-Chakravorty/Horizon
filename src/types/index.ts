@@ -14,8 +14,8 @@ export type LightStatus = "on" | "off" | "auto";
 export interface DeviceControls {
   light1: LightStatus;
   lightLDR: LightStatus;
-  light2: LightStatus; // Added third light
-  ldrIntensity?: number; // Optional: For LDR light intensity (0-100)
+  light2: LightStatus; 
+  ldrIntensity?: number; 
 }
 
 export interface AppData {

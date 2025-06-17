@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 
 interface LightControlProps {
-  lightId: Exclude<keyof DeviceControls, 'ldrIntensity'>; // Ensure ldrIntensity is not passed as lightId
+  lightId: Exclude<keyof DeviceControls, 'ldrIntensity'>; 
   displayName: string;
   icon?: React.ElementType;
   showAutoOption?: boolean;
@@ -75,7 +75,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
       });
     } catch (error) {
       console.error(`Failed to update ${lightId} intensity:`, error);
-      setSelectedIntensity(ldrIntensity); // Revert on error
+      setSelectedIntensity(ldrIntensity); 
       toast({
         variant: "destructive",
         title: "Update Failed",
@@ -104,7 +104,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <motion.div
-              key={currentStatus} // Animate when status changes
+              key={currentStatus} 
               initial={{ scale: 0.8, opacity: 0.7 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -113,7 +113,6 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
             </motion.div>
             {displayName}
           </CardTitle>
-          {/* CardDescription removed as per request */}
         </CardHeader>
         <CardContent>
           <RadioGroup
@@ -152,7 +151,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
                   step={1}
                   value={[selectedIntensity]}
                   onValueChange={handleIntensityChange}
-                  onValueCommit={handleIntensityCommit} // Use onValueCommit to update Firebase after drag ends
+                  onValueCommit={handleIntensityCommit} 
                   disabled={isUpdating}
                   className="w-full"
                 />
