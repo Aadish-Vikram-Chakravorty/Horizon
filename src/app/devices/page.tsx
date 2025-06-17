@@ -225,7 +225,7 @@ export default function DevicesPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="flex flex-row justify-between items-center">
               <div className="flex items-center space-x-3">
-                <Sun className="h-8 w-8 text-purple-500" /> {/* Consider a more specific "auto" icon if available */}
+                <Sun className="h-8 w-8 text-purple-500" /> 
                 <div>
                   <CardTitle className="text-lg">Auto Light (LDR Controlled)</CardTitle>
                   <CardDescription className="capitalize">{devices.lightLDR}</CardDescription>
@@ -271,7 +271,7 @@ export default function DevicesPage() {
           <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-3">
-                <Settings className="h-8 w-8 text-purple-500" />
+                <Sun className="h-8 w-8 text-purple-500" />
                 <div>
                   <CardTitle className="text-lg">LDR Light Info</CardTitle>
                   <CardDescription>Light-dependent resistor control</CardDescription>
@@ -295,7 +295,7 @@ export default function DevicesPage() {
               </div>
               <div className="flex justify-between">
                 <span>Auto Threshold:</span>
-                <span className="font-medium text-muted-foreground">&lt; 30% (example)</span>
+                <span className="font-medium text-muted-foreground">&lt; 30%</span>
               </div>
             </CardContent>
           </Card>
