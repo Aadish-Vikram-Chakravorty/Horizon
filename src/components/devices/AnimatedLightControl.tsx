@@ -109,7 +109,7 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
       >
         <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-10 group-hover:bg-primary transition-colors"></div>
         <motion.div
-          className="relative w-12 h-12 rounded-full"
+          className="relative w-14 h-14 rounded-full" // Increased bulb size
           transition={{ duration: 0.2, ease: "circOut" }}
           animate={getBulbAnimationState()} 
         >
@@ -140,9 +140,9 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
                 {Array.from({ length: 12 }).map((_, i) => (
                   <motion.div
                     key={i}
-                    className="absolute w-[3px] h-12 origin-center bg-[rgba(250,204,21,0.55)] dark:bg-[rgba(255,255,245,0.6)]"
+                    className="absolute w-[3px] h-8 origin-center bg-[rgba(250,204,21,0.55)] dark:bg-[rgba(255,255,245,0.6)]" // Shortened ray height
                     style={{
-                      transform: `rotate(${i * 30}deg) translateY(-22px)`,
+                      transform: `rotate(${i * 30}deg) translateY(-44px)`, // Adjusted ray position
                       borderRadius: '3px',
                     }}
                     custom={i}
