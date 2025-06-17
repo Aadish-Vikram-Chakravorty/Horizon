@@ -66,7 +66,9 @@ export default function DevicesPage() {
             lightId="lightLDR"
             displayName="LDR Smart Light"
             icon={Zap} 
-            showAutoOption={true} 
+            showAutoOption={true}
+            disableStatusControls={true} // Make radio buttons display-only
+            hideIntensitySlider={true}  // Hide the intensity slider
           />
           <LightControl
             lightId="light2" 

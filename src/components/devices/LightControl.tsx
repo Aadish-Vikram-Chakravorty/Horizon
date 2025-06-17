@@ -14,15 +14,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 
 interface LightControlProps {
-  lightId: Exclude<keyof DeviceControls, 'ldrIntensity'>; 
+  lightId: Exclude<keyof DeviceControls, 'ldrIntensity'>;
   displayName: string;
   icon?: React.ElementType;
   showAutoOption?: boolean;
+  disableStatusControls?: boolean; // New prop
+  hideIntensitySlider?: boolean;   // New prop
 }
 
-const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon: Icon, showAutoOption = true }) => {
+const LightControl: React.FC<LightControlProps> = ({
+  lightId,
+  displayName,
+  icon: Icon,
+  showAutoOption = true,
+  disableStatusControls = false,
+  hideIntensitySlider = false,
+}) => {
   const { appData, updateLightStatus, updateLDRIntensity } = useFirebaseData();
-  
+
   const currentStatus = appData?.devices?.[lightId] || 'off';
   const ldrIntensity = appData?.devices?.ldrIntensity ?? 50;
 
@@ -40,7 +49,8 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
   }, [ldrIntensity]);
 
   const handleStatusChange = async (newStatus: LightStatus) => {
-    setSelectedStatus(newStatus); 
+    if (disableStatusControls) return;
+    setSelectedStatus(newStatus);
     setIsUpdating(true);
     try {
       await updateLightStatus(lightId, newStatus);
@@ -50,7 +60,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
       });
     } catch (error) {
       console.error(`Failed to update ${lightId}:`, error);
-      setSelectedStatus(currentStatus); 
+      setSelectedStatus(currentStatus);
       toast({
         variant: "destructive",
         title: "Update Failed",
@@ -62,10 +72,12 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
   };
 
   const handleIntensityChange = (newIntensity: number[]) => {
+    if (disableStatusControls) return;
     setSelectedIntensity(newIntensity[0]);
   };
-  
+
   const handleIntensityCommit = async (newIntensity: number[]) => {
+    if (disableStatusControls) return;
     setIsUpdating(true);
     try {
       await updateLDRIntensity(newIntensity[0]);
@@ -75,7 +87,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
       });
     } catch (error) {
       console.error(`Failed to update ${lightId} intensity:`, error);
-      setSelectedIntensity(ldrIntensity); 
+      setSelectedIntensity(ldrIntensity);
       toast({
         variant: "destructive",
         title: "Update Failed",
@@ -104,7 +116,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <motion.div
-              key={currentStatus} 
+              key={currentStatus}
               initial={{ scale: 0.8, opacity: 0.7 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -120,11 +132,11 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
             onValueChange={(value: string) => handleStatusChange(value as LightStatus)}
             className="flex space-x-2 sm:space-x-4 mb-4"
             aria-label={`Control ${displayName}`}
-            disabled={isUpdating}
+            disabled={isUpdating || disableStatusControls}
           >
             {availableStatuses.map((status) => (
               <div key={status} className="flex items-center space-x-2">
-                <RadioGroupItem value={status} id={`${lightId}-${status}`} />
+                <RadioGroupItem value={status} id={`${lightId}-${status}`} disabled={isUpdating || disableStatusControls} />
                 <Label htmlFor={`${lightId}-${status}`} className="capitalize cursor-pointer">
                   {status}
                 </Label>
@@ -133,7 +145,7 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
           </RadioGroup>
 
           <AnimatePresence>
-            {lightId === 'lightLDR' && selectedStatus === 'on' && (
+            {lightId === 'lightLDR' && selectedStatus === 'on' && !hideIntensitySlider && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -151,8 +163,8 @@ const LightControl: React.FC<LightControlProps> = ({ lightId, displayName, icon:
                   step={1}
                   value={[selectedIntensity]}
                   onValueChange={handleIntensityChange}
-                  onValueCommit={handleIntensityCommit} 
-                  disabled={isUpdating}
+                  onValueCommit={handleIntensityCommit}
+                  disabled={isUpdating || disableStatusControls}
                   className="w-full"
                 />
               </motion.div>
