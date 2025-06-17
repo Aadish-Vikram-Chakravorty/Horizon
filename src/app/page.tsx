@@ -194,7 +194,7 @@ export default function HomePage() {
       case 'waterLevel': return Waves;
       case 'ldrBrightness': return Sun;
       case 'flameDetected': return Flame;
-      case 'waterShortage': return Zap;
+      case 'waterShortage': return AlertTriangle; // Changed from Zap
       default: return Activity;
     }
   };
@@ -253,7 +253,7 @@ export default function HomePage() {
                         <CardTitle className="flex items-center gap-2 text-lg">
                           {alert.type === 'flame' ? <AlertTriangle className="text-destructive"/> : 
                            alert.type === 'soilMoisture' ? <Leaf className="text-destructive" /> : 
-                           alert.type === 'waterShortage' ? <Zap className="text-destructive" /> : 
+                           alert.type === 'waterShortage' ? <AlertTriangle className="text-destructive" /> : // Changed from Zap
                            <Activity className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}/>}
                           {alert.title}
                         </CardTitle>
@@ -319,7 +319,7 @@ export default function HomePage() {
                   <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : "text-muted-foreground"} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 flex flex-col items-center pt-2 pb-4">
+              <CardContent className="space-y-3 flex flex-col items-center pt-2 pb-2"> 
                 <div className="flex space-x-2">
                 {(['on', 'off', 'auto'] as LightStatus[]).map((status) => (
                   <Button
@@ -357,3 +357,4 @@ export default function HomePage() {
     </div>
   );
 }
+
