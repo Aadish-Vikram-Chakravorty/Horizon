@@ -40,48 +40,42 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
     }
   };
 
-  const bulbVariants = {
+  const lightBarVariants = {
     on: {
-      backgroundColor: "rgba(250, 204, 21, 1)", 
+      backgroundColor: "rgba(250, 204, 21, 1)", // yellowish
       borderColor: "rgba(234, 179, 8, 1)", 
-      boxShadow: "0 0 20px 8px rgba(250, 204, 21, 0.6)",
+      boxShadow: "0 0 15px 5px rgba(250, 204, 21, 0.5)",
       scale: 1.03,
     },
     off: {
-      backgroundColor: "rgba(209, 213, 219, 1)", 
+      backgroundColor: "rgba(209, 213, 219, 1)", // neutral gray
       borderColor: "rgba(156, 163, 175, 1)", 
       boxShadow: "none",
       scale: 1,
     },
   };
 
-  const darkBulbVariants = {
+  const darkLightBarVariants = {
     on: {
       backgroundColor: "rgba(255, 255, 245, 1)", // Ivory/off-white
-      borderColor: "rgba(240, 240, 230, 1)", // Slightly darker ivory/beige
-      boxShadow: "0 0 20px 8px rgba(255, 255, 245, 0.7)", // Ivory/off-white glow
+      borderColor: "rgba(240, 240, 230, 1)", 
+      boxShadow: "0 0 15px 5px rgba(255, 255, 245, 0.6)", 
       scale: 1.03,
     },
     off: {
-      backgroundColor: "rgba(75, 85, 99, 1)", 
+      backgroundColor: "rgba(75, 85, 99, 1)", // darker gray for dark mode off
       borderColor: "rgba(107, 114, 128, 1)", 
       boxShadow: "none",
       scale: 1,
     },
   };
+  
+  const stringVariants = {
+    on: { backgroundColor: "hsl(var(--primary))" },
+    off: { backgroundColor: "hsl(var(--muted-foreground))" }
+  }
 
-  const rayVariants = {
-    hidden: { opacity: 0, scaleY: 0.3, y: 8 },
-    visible: (i: number) => ({
-      opacity: 1,
-      scaleY: 1,
-      y: 0,
-      transition: { delay: i * 0.02, duration: 0.15, ease: "easeOut" },
-    }),
-    exit: { opacity: 0, scaleY: 0, y: 8, transition: { duration: 0.12 } },
-  };
-
-  const getBulbAnimationState = () => {
+  const getLightAnimationState = () => {
     return currentStatus === 'on' ? "on" : "off";
   }
 
@@ -107,51 +101,33 @@ const AnimatedLightControl: React.FC<AnimatedLightControlProps> = ({
         aria-pressed={currentStatus === 'on'}
         aria-label={`Toggle ${displayName} ${currentStatus === 'on' ? 'off' : 'on'}`}
       >
-        <div className="h-6 w-0.5 bg-gray-500 dark:bg-gray-400 mb-[-1px] z-10 group-hover:bg-primary transition-colors"></div>
+        <motion.div 
+          className="h-10 w-0.5 mb-[-1px] z-10 group-hover:bg-primary transition-colors"
+          variants={stringVariants}
+          animate={getLightAnimationState()}
+          transition={{ duration: 0.2 }}
+        />
         <motion.div
-          className="relative w-14 h-14 rounded-full" // Increased bulb size
+          className="relative w-16 h-3 rounded-md border" // Horizontal bar shape
           transition={{ duration: 0.2, ease: "circOut" }}
-          animate={getBulbAnimationState()} 
+          animate={getLightAnimationState()} 
         >
           <div className="dark:hidden">
             <motion.div
-              className="w-full h-full rounded-full border-2"
-              variants={bulbVariants}
-              animate={getBulbAnimationState()}
+              className="w-full h-full rounded-md"
+              variants={lightBarVariants}
+              animate={getLightAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
             />
           </div>
           <div className="hidden dark:block">
             <motion.div
-              className="w-full h-full rounded-full border-2"
-              variants={darkBulbVariants}
-              animate={getBulbAnimationState()}
+              className="w-full h-full rounded-md"
+              variants={darkLightBarVariants}
+              animate={getLightAnimationState()}
               transition={{ duration: 0.2, ease: "circOut" }}
             />
           </div>
-          <AnimatePresence>
-            {currentStatus === 'on' && !isUpdating && ( 
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-[3px] h-8 origin-center bg-[rgba(250,204,21,0.55)] dark:bg-[rgba(255,255,245,0.6)]" // Shortened ray height
-                    style={{
-                      transform: `rotate(${i * 30}deg) translateY(-44px)`, // Adjusted ray position
-                      borderRadius: '3px',
-                    }}
-                    custom={i}
-                    variants={rayVariants}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
       </motion.div>
     </div>

@@ -337,9 +337,6 @@ export default function HomePage() {
                   </Button>
                 ))}
                 </div>
-                 <Link href="/devices" className="w-full flex justify-center">
-                   <Button variant="link" size="sm" className="text-xs px-0 mt-2">Advanced Settings</Button>
-                 </Link>
               </CardContent>
             </Card>
 
