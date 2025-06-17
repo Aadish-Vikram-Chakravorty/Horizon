@@ -64,7 +64,8 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
   const center = size / 2;
 
   // Calculate the end angle for the arc. 359.99 to avoid issues with full 360.
-  const valueArcEndAngle = normalizedValue * 359.99;
+  // For a value of 0, the arc should have an endAngle of 0.
+  const valueArcEndAngle = normalizedValue === 0 ? 0 : normalizedValue * 359.99;
 
 
   const majorTickValues = [0, 25, 50, 75, 100];
@@ -90,23 +91,29 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
             fill="transparent"
           />
           {/* Value arc - starts from 0 degrees (top) and goes clockwise */}
-          <motion.path
-            d={describeArc(center, center, radius, 0, valueArcEndAngle)}
-            stroke="hsl(var(--primary))"
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            strokeLinecap="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: normalizedValue }} // Animate based on the normalized value
-            transition={{ duration: 1, ease: "circOut" }}
-          />
+          {normalizedValue > 0 && ( // Only render path if there's a value to show
+            <motion.path
+              d={describeArc(center, center, radius, 0, valueArcEndAngle)}
+              stroke="hsl(var(--primary))"
+              strokeWidth={strokeWidth}
+              fill="transparent"
+              strokeLinecap="butt" // Changed from "round" to "butt"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: normalizedValue }} // Animate based on the normalized value
+              transition={{ duration: 1, ease: "circOut" }}
+            />
+          )}
 
           {/* Minor Ticks */}
           {Array.from({ length: numMinorTicks }).map((_, i) => {
             const tickVal = (i + 1) * minorTickIncrement;
-            if (tickVal >= max || majorTickValues.includes(tickVal)) return null;
+            // Skip minor ticks that coincide with major ticks, unless it's the 0 or 100 mark if you want them explicit.
+            // Here, we assume major ticks handle their own drawing.
+            if (majorTickValues.includes(tickVal) && tickVal !== 0 && tickVal !== max) return null; 
+            if (tickVal > max) return null; // Don't draw ticks beyond max
             
             const angle = (tickVal / max) * 360;
+            // Adjust tick length if needed. These start/end points make them cross the center of the track.
             const start = polarToCartesian(center, center, radius - strokeWidth / 2 + 2, angle);
             const end = polarToCartesian(center, center, radius + strokeWidth / 2 - 2, angle);
             return (
@@ -116,8 +123,8 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
                 y1={start.y}
                 x2={end.x}
                 y2={end.y}
-                stroke="hsl(var(--border))"
-                strokeWidth="1"
+                stroke="hsl(var(--border))" // Color for minor ticks
+                strokeWidth="1" // Thickness for minor ticks
               />
             );
           })}
@@ -125,6 +132,7 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
           {/* Major Ticks (Lines Only) */}
           {majorTickValues.map(val => {
             const angle = (val / max) * 360;
+            // Make major ticks slightly longer or more prominent than minor ones
             const tickStartOuter = polarToCartesian(center, center, radius - strokeWidth / 2, angle);
             const tickEndOuter = polarToCartesian(center, center, radius + strokeWidth / 2, angle);
 
@@ -135,8 +143,8 @@ const DisplayOnlyRadialGauge: React.FC<DisplayOnlyRadialGaugeProps> = ({
                   y1={tickStartOuter.y}
                   x2={tickEndOuter.x}
                   y2={tickEndOuter.y}
-                  stroke="hsl(var(--foreground))" 
-                  strokeWidth="2" 
+                  stroke="hsl(var(--foreground))" // Color for major ticks (e.g., white in dark mode)
+                  strokeWidth="2" // Thickness for major ticks
                 />
               </React.Fragment>
             );
