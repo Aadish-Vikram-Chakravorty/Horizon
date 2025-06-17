@@ -148,7 +148,7 @@ export default function HomePage() {
         let displayName = "Unknown Device";
         let icon = Lightbulb;
         if (key === 'light1') {displayName = "Living Room Light"; icon = Sofa;}
-        else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Zap;}
+        else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Sun;} // Changed icon here
         else if (key === 'light2') {displayName = "Bedroom Light"; icon = BedDouble;}
 
         deviceList.push({ id: key, name: displayName, status: deviceStatus, icon: icon });
@@ -194,7 +194,7 @@ export default function HomePage() {
       case 'waterLevel': return Waves;
       case 'ldrBrightness': return Sun;
       case 'flameDetected': return Flame;
-      case 'waterShortage': return AlertTriangle; // Changed from Zap
+      case 'waterShortage': return AlertTriangle;
       default: return Activity;
     }
   };
@@ -253,7 +253,7 @@ export default function HomePage() {
                         <CardTitle className="flex items-center gap-2 text-lg">
                           {alert.type === 'flame' ? <AlertTriangle className="text-destructive"/> : 
                            alert.type === 'soilMoisture' ? <Leaf className="text-destructive" /> : 
-                           alert.type === 'waterShortage' ? <AlertTriangle className="text-destructive" /> : // Changed from Zap
+                           alert.type === 'waterShortage' ? <AlertTriangle className="text-destructive" /> :
                            <Activity className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}/>}
                           {alert.title}
                         </CardTitle>
@@ -316,7 +316,7 @@ export default function HomePage() {
             <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/70 min-h-[180px] flex flex-col justify-center">
               <CardHeader className="pt-4 pb-2">
                 <CardTitle className="flex items-center justify-center gap-2 text-base font-medium">
-                  <Zap className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : "text-muted-foreground"} /> LDR Smart Light
+                  <Sun className={(devices.lightLDR === "on" || devices.lightLDR === "auto") ? "text-yellow-400" : "text-muted-foreground"} /> LDR Smart Light
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 flex flex-col items-center pt-2 pb-2"> 
@@ -358,3 +358,5 @@ export default function HomePage() {
   );
 }
 
+
+    
