@@ -18,7 +18,6 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
 import { Home, Gauge, Settings, Menu, LayoutDashboard } from 'lucide-react'; 
 import { usePathname } from 'next/navigation';
-// import Image from 'next/image'; // No longer needed for logo
 
 interface NavItem {
   href: string;
@@ -45,9 +44,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r border-border/50">
-        <SidebarHeader className="p-4 flex items-center gap-2">
-           <LayoutDashboard className="h-8 w-8 text-primary" />
-          <h1 className="text-xl font-semibold font-headline group-data-[collapsible=icon]:hidden">Horizon Hub</h1>
+        <SidebarHeader className="p-4 flex items-start gap-2">
+           <LayoutDashboard className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
+           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <h1 className="text-xl font-semibold font-headline">Horizon</h1>
+            <p className="text-xs text-muted-foreground">Smart Home Hub</p>
+          </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -93,4 +95,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-

@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Inter as FontSans } from 'next/font/google';
 import './globals.css';
@@ -12,8 +13,8 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
-  title: 'Horizon Hub - Smart Home Automation',
-  description: 'Intelligent smart home automation dashboard by Horizon.',
+  title: 'Horizon - Smart Home Hub',
+  description: 'Smart Home Hub by Horizon.',
   icons: {
     icon: '/favicon.ico', // Assuming a favicon might be added later
   },
