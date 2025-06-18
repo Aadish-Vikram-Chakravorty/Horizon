@@ -44,21 +44,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider defaultOpen>
       <Sidebar collapsible="icon" className="border-r border-border/50">
-        <SidebarHeader className="p-4"> {/* Relies on default flex-col and gap-2 from component definition */}
-          {/* Row for Icon and Text block. This row will be centered when sidebar is collapsed. */}
-          <div className="flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center">
+        <SidebarHeader className="p-4">
+          <div className="flex w-full items-center gap-2 group-data-[collapsible=icon]:justify-center">
             <LayoutDashboard className="h-8 w-8 text-primary flex-shrink-0" />
             <div className="flex flex-col text-center flex-grow group-data-[collapsible=icon]:hidden">
-              <h1 className="text-xl font-semibold font-headline">Horizon</h1>
-              <p className="text-xs text-muted-foreground">Smart Home Hub</p>
+              <h1 className="text-2xl font-semibold font-headline">Horizon</h1>
+              <p className="text-sm text-muted-foreground">Smart Home Hub</p>
             </div>
           </div>
           
-          {/* Horizontal Line, hidden when collapsed. Space above will be from SidebarHeader's gap-2 */}
           <hr className="w-full border-sidebar-border group-data-[collapsible=icon]:hidden" />
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
+          <SidebarMenu className="px-2">
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
@@ -101,3 +99,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
