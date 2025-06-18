@@ -55,14 +55,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
-      const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+      // Format: Wednesday 18 Jun
+      const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' };
       setCurrentDateString(now.toLocaleDateString(undefined, dateOptions));
       
+      // Format: HH:MM (24-hour)
       const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: false };
       setCurrentTimeString(now.toLocaleTimeString(undefined, timeOptions));
     };
 
-    if (mounted) { // Only run this effect if mounted to avoid server/client mismatch on first run
+    if (mounted) { 
       updateDateTime(); 
       const intervalId = setInterval(updateDateTime, 1000); 
       return () => clearInterval(intervalId); 
@@ -112,15 +114,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
-            <div className="text-sm text-muted-foreground font-mono">
-              {mounted && currentTimeString ? currentTimeString : '--:--'}
-            </div>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <div className="text-sm text-muted-foreground hidden sm:block">
-               {mounted && currentDateString ? currentDateString : 'Loading date...'}
+            <div className="flex-col items-end text-right mr-3 hidden sm:flex">
+                <div className="text-xl font-medium text-foreground">
+                    {mounted && currentTimeString ? currentTimeString : '--:--'}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                    {mounted && currentDateString ? currentDateString : 'Loading date...'}
+                </div>
             </div>
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
