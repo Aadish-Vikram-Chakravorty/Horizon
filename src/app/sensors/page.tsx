@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -105,10 +106,11 @@ export default function SensorsPage() {
           value={sensors.waterShortage ? 1 : 0} // Map boolean to 0 or 1
           min={0}
           max={1}
-          icon={Zap} // Using Zap as a generic "status" icon
+          icon={AlertTriangle} 
           valueColor={sensors.waterShortage ? "hsl(var(--destructive))" : "hsl(var(--primary))"}
         />
       </motion.div>
     </div>
   );
 }
+
