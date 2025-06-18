@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa, Thermometer, Droplets, Waves, Sun, Flame } from 'lucide-react';
+import { Lightbulb, ShieldAlert, AlertTriangle, Activity, WifiOff, BedDouble, Zap, ChevronDown, Leaf, Sofa, Thermometer, Droplets, Waves, Sun, Flame, ShieldCheck } from 'lucide-react';
 import { useFirebaseData } from '@/contexts/FirebaseDataContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { AlertContent, SensorReadings, DeviceControls, LightStatus } from '@/types';
@@ -148,7 +148,7 @@ export default function HomePage() {
         let displayName = "Unknown Device";
         let icon = Lightbulb;
         if (key === 'light1') {displayName = "Living Room Light"; icon = Sofa;}
-        else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Sun;} // Changed icon here
+        else if (key === 'lightLDR') {displayName = "LDR Smart Light"; icon = Sun;}
         else if (key === 'light2') {displayName = "Bedroom Light"; icon = BedDouble;}
 
         deviceList.push({ id: key, name: displayName, status: deviceStatus, icon: icon });
@@ -238,42 +238,67 @@ export default function HomePage() {
           </div>
         </motion.div>
       
-        {alerts.length > 0 && (
-          <motion.section variants={itemVariants}>
-            <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
-              <ShieldAlert /> Important Alerts
-              <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
-            </h2>
-            <div className="grid gap-4 grid-cols-1">
-              {alerts.map(alert => (
-                <Card key={alert.id} className={`border-l-4 ${alert.severity === 'critical' ? 'border-destructive' : 'border-yellow-500'}`}>
-                  <CardHeader className="py-4 px-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          {alert.type === 'flame' ? <AlertTriangle className="text-destructive"/> : 
-                           alert.type === 'soilMoisture' ? <Leaf className="text-destructive" /> : 
-                           alert.type === 'waterShortage' ? <AlertTriangle className="text-destructive" /> :
-                           <Activity className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}/>}
-                          {alert.title}
-                        </CardTitle>
-                        <CardDescription className="text-xs mt-1">
-                          {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
-                        </CardDescription>
+        <motion.section variants={itemVariants} className="mt-8">
+          {alerts.length > 0 ? (
+            <>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-destructive">
+                <ShieldAlert /> Important Alerts
+                <Badge variant="destructive" className="ml-2">{alerts.length}</Badge>
+              </h2>
+              <div className="grid gap-4 grid-cols-1">
+                {alerts.map(alert => (
+                  <Card 
+                    key={alert.id} 
+                    className={`border-l-4 ${
+                      alert.severity === 'critical' 
+                        ? 'border-destructive dark:border-red-500' 
+                        : 'border-yellow-500 dark:border-yellow-400'
+                    } shadow-lg hover:shadow-xl transition-shadow duration-300`}
+                  >
+                    <CardHeader className="py-4 px-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            {alert.type === 'flame' ? <Flame className="text-destructive"/> : 
+                             alert.type === 'soilMoisture' ? <Leaf className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'} /> : 
+                             alert.type === 'waterShortage' ? <AlertTriangle className="text-destructive" /> :
+                             <Activity className={alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500'}/>}
+                            {alert.title}
+                          </CardTitle>
+                          <CardDescription className="text-xs mt-1">
+                            {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
+                          </CardDescription>
+                        </div>
+                        <Badge variant={getSeverityBadgeVariant(alert.severity)}>
+                          {getSeverityText(alert.severity)}
+                        </Badge>
                       </div>
-                      <Badge variant={getSeverityBadgeVariant(alert.severity)}>
-                        {getSeverityText(alert.severity)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4 px-6">
-                    <p>{alert.message}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </motion.section>
-        )}
+                    </CardHeader>
+                    <CardContent className="pb-4 px-6">
+                      <p>{alert.message}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-green-600 dark:text-green-400">
+                <ShieldCheck className="h-6 w-6 text-green-500 dark:text-green-400" /> System Status
+              </h2>
+              <Card className="border-l-4 border-green-500 dark:border-green-400 shadow-lg shadow-green-500/20 dark:shadow-green-400/20 hover:shadow-xl transition-shadow duration-300">
+                <CardHeader className="py-4 px-6">
+                  <CardTitle className="flex items-center gap-2 text-lg text-green-700 dark:text-green-300">
+                    No Active Alerts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4 px-6">
+                  <p className="text-base">Everything is fine, Your home is safe.</p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </motion.section>
 
         <motion.section variants={itemVariants} className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Sensor Status</h2>
@@ -357,6 +382,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-    
