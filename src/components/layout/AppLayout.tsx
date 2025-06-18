@@ -110,13 +110,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-lg px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4"> {/* Adjusted gap */}
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex-col items-end text-right mr-3 hidden sm:flex">
+             {/* Date and Time Block - Moved Here */}
+            <div className="flex-col items-start text-left"> {/* Removed hidden sm:flex, changed alignment */}
                 <div className="text-xl font-medium text-foreground">
                     {mounted && currentTimeString ? currentTimeString : '--:--'}
                 </div>
@@ -124,11 +123,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {mounted && currentDateString ? currentDateString : 'Loading date...'}
                 </div>
             </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle and Profile Dropdown remain here */}
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <CircleUserRound className="h-6 w-6 text-primary" />
+                  <CircleUserRound className="h-6 w-6 text-primary" /> {/* Enlarged icon */}
                   <span className="sr-only">User Menu</span>
                 </Button>
               </DropdownMenuTrigger>
