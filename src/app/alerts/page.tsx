@@ -48,17 +48,21 @@ export default function AlertsPage() {
         const newAlerts: AlertContent[] = [];
         const sensors = appData.sensors;
 
+        // For the "Alerts" page, we simulate a history by re-evaluating current sensor data.
+        // A true persistent history would require storing each alert event.
         if (sensors.soilMoisture < 10) {
           newAlerts.push({
             id: 'soilMoistureLow_hist', type: 'soilMoisture', title: 'Low Soil Moisture!',
             message: `Soil moisture is critically low (${sensors.soilMoisture}%). Immediate watering needed.`,
-            timestamp: Date.now(), severity: 'critical', sensorValue: sensors.soilMoisture,
+            timestamp: Date.now() - Math.random() * 1000 * 60 * 5, // Simulate slightly older alerts
+            severity: 'critical', sensorValue: sensors.soilMoisture,
           });
         } else if (sensors.soilMoisture < 20) {
           newAlerts.push({
             id: 'soilMoistureWarning_hist', type: 'soilMoisture', title: 'Low Soil Moisture Warning',
             message: `Soil moisture is low (${sensors.soilMoisture}%). Consider watering soon.`,
-            timestamp: Date.now(), severity: 'warning', sensorValue: sensors.soilMoisture,
+            timestamp: Date.now() - Math.random() * 1000 * 60 * 3,
+            severity: 'warning', sensorValue: sensors.soilMoisture,
           });
         }
 
@@ -66,7 +70,8 @@ export default function AlertsPage() {
           newAlerts.push({
             id: 'flameDetected_hist', type: 'flame', title: 'Flame Detected!',
             message: 'A flame has been detected! Take immediate action.',
-            timestamp: Date.now(), severity: 'critical', sensorValue: sensors.flameDetected,
+            timestamp: Date.now() - Math.random() * 1000 * 60 * 10,
+            severity: 'critical', sensorValue: sensors.flameDetected,
           });
         }
         
@@ -74,14 +79,28 @@ export default function AlertsPage() {
           newAlerts.push({
             id: 'waterShortage_hist', type: 'waterShortage', title: 'Water Shortage!',
             message: 'Water supply is critically low. Check your main water source.',
-            timestamp: Date.now(), severity: 'critical', sensorValue: sensors.waterShortage,
+            timestamp: Date.now() - Math.random() * 1000 * 60 * 2,
+            severity: 'critical', sensorValue: sensors.waterShortage,
           });
         }
-        // For the "Alerts" page, we show all generated alerts based on current sensor readings.
-        // A true history would require persistent storage of each alert instance.
+        // Example of an older, informational alert if conditions were previously fine
+        if (newAlerts.length === 0 && Math.random() > 0.7) {
+             newAlerts.push({
+                id: 'systemOk_prev_hist', type: 'soilMoisture', title: 'System Check Normal',
+                message: 'All sensor readings were nominal an hour ago.',
+                timestamp: Date.now() - 1000 * 60 * 60, // 1 hour ago
+                severity: 'info',
+             });
+        }
+
         setCurrentAlerts(newAlerts.sort((a, b) => b.timestamp - a.timestamp));
       };
       processAlerts();
+      
+      // Simulate new alerts occasionally for demonstration if Firebase doesn't update frequently
+      const intervalId = setInterval(processAlerts, 300000); // Refresh alerts every 5 mins
+      return () => clearInterval(intervalId);
+
     }
   }, [appData]);
 
@@ -109,79 +128,86 @@ export default function AlertsPage() {
     );
   }
   
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.1 } },
+  const pageVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
+    hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <motion.div initial="hidden" animate="visible" variants={cardVariants}>
+    <div className="container mx-auto p-4">
+      <motion.div initial="hidden" animate="visible" variants={pageVariants}>
         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-4xl font-bold font-headline text-primary flex items-center gap-2">
               <Bell /> Alerts Log
             </h1>
             <p className="text-muted-foreground mt-1">
-              Showing alerts based on current sensor readings.
+              History of system alerts and notifications.
             </p>
           </div>
         </motion.div>
 
         {currentAlerts.length > 0 ? (
-          <motion.div variants={itemVariants} className="grid gap-4 grid-cols-1 md:grid-cols-2">
+          <motion.div 
+            className="space-y-4 max-w-2xl mx-auto" // Single column, max width for readability
+            variants={{ visible: { transition: { staggerChildren: 0.07 } } }} // Stagger children for alert list
+          >
             {currentAlerts.map(alert => {
               const IconComponent = getAlertIcon(alert.type, alert.severity);
-              const iconColorClass = alert.severity === 'critical' ? 'text-destructive' : 'text-yellow-500';
+              const iconColorClass = alert.severity === 'critical' ? 'text-destructive' : 
+                                     alert.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500';
 
               return (
-                <Card 
-                  key={alert.id} 
-                  className={`border-l-4 ${
-                    alert.severity === 'critical' 
-                      ? 'border-destructive dark:border-red-500' 
-                      : 'border-yellow-500 dark:border-yellow-400'
-                  } shadow-lg hover:shadow-xl transition-shadow duration-300`}
-                >
-                  <CardHeader className="py-4 px-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <IconComponent className={iconColorClass} />
-                          {alert.title}
-                        </CardTitle>
-                        <CardDescription className="text-xs mt-1">
-                          {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
-                        </CardDescription>
+                <motion.div key={alert.id} variants={itemVariants}>
+                  <Card 
+                    className={`border-l-4 ${
+                      alert.severity === 'critical' 
+                        ? 'border-destructive dark:border-red-500' 
+                        : alert.severity === 'warning' 
+                          ? 'border-yellow-500 dark:border-yellow-400'
+                          : 'border-blue-500 dark:border-blue-400'
+                    } shadow-lg hover:shadow-xl transition-shadow duration-300`}
+                  >
+                    <CardHeader className="py-3 px-5"> 
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2 text-md">
+                            <IconComponent className={`${iconColorClass} h-5 w-5`} />
+                            {alert.title}
+                          </CardTitle>
+                          <CardDescription className="text-xs mt-1">
+                            {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
+                          </CardDescription>
+                        </div>
+                        <Badge variant={getSeverityBadgeVariant(alert.severity)} className="text-xs px-2 py-0.5">
+                          {getSeverityText(alert.severity)}
+                        </Badge>
                       </div>
-                      <Badge variant={getSeverityBadgeVariant(alert.severity)}>
-                        {getSeverityText(alert.severity)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-4 px-6">
-                    <p>{alert.message}</p>
-                  </CardContent>
-                </Card>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-3 px-5">
+                      <p className="text-sm">{alert.message}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </motion.div>
         ) : (
-          <motion.div variants={itemVariants}>
+          <motion.div variants={itemVariants} className="max-w-2xl mx-auto">
              <Card className="border-l-4 border-green-500 dark:border-green-400 shadow-lg shadow-green-500/20 dark:shadow-green-400/20 hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="py-4 px-6">
-                  <CardTitle className="flex items-center gap-2 text-lg text-green-700 dark:text-green-300">
-                    <ShieldCheck className="h-6 w-6 text-green-500 dark:text-green-400" />
+                <CardHeader className="py-3 px-5">
+                  <CardTitle className="flex items-center gap-2 text-md text-green-700 dark:text-green-300">
+                    <ShieldCheck className="h-5 w-5 text-green-500 dark:text-green-400" />
                     No Active Alerts
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pb-4 px-6">
-                  <p className="text-base">Everything is fine, Your home is safe.</p>
+                <CardContent className="pt-0 pb-3 px-5">
+                  <p className="text-sm">Everything is fine, Your home is safe.</p>
                 </CardContent>
               </Card>
           </motion.div>
@@ -190,3 +216,5 @@ export default function AlertsPage() {
     </div>
   );
 }
+
+    
