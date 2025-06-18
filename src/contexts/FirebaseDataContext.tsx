@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ref, onValue, set, DatabaseReference } from 'firebase/database';
-import { database } from '@/lib/firebase';
+import { database } from '@/lib/firebase'; 
 import type { AppData, DeviceControls, LightStatus, HistoricalSensorData } from '@/types';
 
 interface FirebaseContextType {
