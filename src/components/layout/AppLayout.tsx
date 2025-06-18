@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Link from 'next/link';
-import { Home, Gauge, Settings2, Menu, LayoutDashboard, Bell, CircleUserRound } from 'lucide-react'; 
+import { Home, Gauge, Settings2 as SettingsIcon, Menu, LayoutDashboard, Bell, CircleUserRound } from 'lucide-react'; 
 import { usePathname } from 'next/navigation';
 import {
   DropdownMenu,
@@ -37,15 +37,20 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/sensors', label: 'Sensors Data', icon: Gauge },
-  { href: '/devices', label: 'Devices', icon: Settings2 }, 
+  { href: '/devices', label: 'Devices', icon: SettingsIcon }, 
   { href: '/alerts', label: 'Alerts', icon: Bell },
-  { href: '/settings', label: 'Settings', icon: Settings2 },
+  { href: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [currentDateString, setCurrentDateString] = useState<string>('');
   const [currentTimeString, setCurrentTimeString] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -57,11 +62,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setCurrentTimeString(now.toLocaleTimeString(undefined, timeOptions));
     };
 
-    updateDateTime(); // Initial call
-    const intervalId = setInterval(updateDateTime, 1000); // Update every second
-
-    return () => clearInterval(intervalId); // Cleanup interval on component unmount
-  }, []);
+    if (mounted) { // Only run this effect if mounted to avoid server/client mismatch on first run
+      updateDateTime(); 
+      const intervalId = setInterval(updateDateTime, 1000); 
+      return () => clearInterval(intervalId); 
+    }
+  }, [mounted]);
 
   return (
     <SidebarProvider defaultOpen>
@@ -83,7 +89,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton
-                    asChild={false} // Ensure it's a button for proper active state handling if Link is direct child
                     isActive={pathname === item.href}
                     tooltip={{ children: item.label, side: 'right', className: "ml-2" }}
                     className="justify-start"
@@ -107,19 +112,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger>
               <Menu className="h-6 w-6" />
             </SidebarTrigger>
-            {currentTimeString && (
-              <div className="text-sm text-muted-foreground font-mono">
-                {currentTimeString}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground font-mono">
+              {mounted && currentTimeString ? currentTimeString : '--:--'}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            {currentDateString && (
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                {currentDateString}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground hidden sm:block">
+               {mounted && currentDateString ? currentDateString : 'Loading date...'}
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
