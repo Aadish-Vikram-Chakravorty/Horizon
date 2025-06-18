@@ -37,7 +37,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/sensors', label: 'Sensors Data', icon: Gauge },
-  { href: '/devices', label: 'Devices', icon: Settings2 }, // Changed icon for devices
+  { href: '/devices', label: 'Devices', icon: Settings2 }, 
   { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings2 },
 ];
@@ -81,7 +81,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu className="px-2">
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} passHref legacyBehavior>
+                <Link href={item.href}>
                   <SidebarMenuButton
                     asChild={false} // Ensure it's a button for proper active state handling if Link is direct child
                     isActive={pathname === item.href}
