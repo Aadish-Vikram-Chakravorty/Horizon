@@ -11,7 +11,7 @@ export function SensorProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('https://YOUR_PROJECT_ID.firebaseio.com/.json');
+        const res = await fetch('https://horizon-e7e0a.firebaseio.com/.json');
         const data = await res.json();
         setSensorData(data);
       } catch (error) {
