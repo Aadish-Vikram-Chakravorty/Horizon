@@ -4,7 +4,7 @@ import { useSensorData } from '@/contexts/SensorContext';
 export default function Dashboard() {
   const { sensorData, loading } = useSensorData();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Loading..</div>;
   if (!sensorData) return <div>No data available</div>;
 
   return (
