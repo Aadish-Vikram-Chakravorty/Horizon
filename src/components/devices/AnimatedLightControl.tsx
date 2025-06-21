@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 interface AnimatedLightControlProps {
   lightId: 'light1' | 'light2'; 
   displayName: string;
-  IconComponent: LucideIcon;
+  IconComponent: React.ElementType;
   className?: string;
 }
 
