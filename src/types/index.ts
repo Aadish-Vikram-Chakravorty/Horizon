@@ -41,3 +41,8 @@ export interface AlertContent {
   severity: "critical" | "warning" | "info";
   sensorValue?: number | boolean;
 }
+
+export interface SensorData {
+  brightness: number;
+  waterLevel: number;
+}

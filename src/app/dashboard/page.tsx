@@ -1,61 +1,52 @@
-'use client';
-import { useSensorData } from '@/contexts/SensorContext';
-
+"use client";
+import { Card } from "@/components/ui/card";
+import { useContext } from "react";
+import { FirebaseDataContext } from "@/contexts/FirebaseDataContext";
+import { Alert } from "@/components/ui/alert";
 export default function Dashboard() {
-  const { sensorData, loading } = useSensorData();
+  const { sensorData } = useContext(FirebaseDataContext);
 
-  if (loading) return <div>Loading...</div>;
-  if (!sensorData) return <div>No data available</div>;
+  // Normalize brightness (0-255 → 0-100%)
+  const brightnessPercent = Math.min(100, Math.round((sensorData.brightness / 255) * 100));
+
+  // Handle water level alerts
+  const waterPercent = Math.min(100, sensorData.waterLevel);
+  const isWaterShortage = waterPercent <= 20;
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Dashboard Overview</h1>
-      
-      {/* Critical Alerts */}
-      <div className="mb-6 p-4 bg-red-50 rounded-lg">
-        <h2 className="font-semibold text-red-800">Important Alerts</h2>
-        {sensorData.SensorData.waterShortage && (
-          <p className="mt-2">⚠️ Water shortage detected!</p>
-        )}
-        {sensorData.SensorData.moisturePercent === 0 && (
-          <p className="mt-2">⚠️ Critical soil moisture (0%) - Water immediately!</p>
-        )}
-      </div>
-
-      {/* Sensor Summary */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded shadow">
-          <p>Temperature</p>
-          <p className="text-2xl">{sensorData.SensorData.temperature}°C</p>
-        </div>
-        <div className="bg-white p-4 rounded shadow">
-          <p>Humidity</p>
-          <p className="text-2xl">{sensorData.SensorData.humidity}%</p>
-        </div>
-        <div className="bg-white p-4 rounded shadow">
-          <p>Water Level</p>
-          <p className="text-2xl">{sensorData.SensorData.waterPercent}%</p>
-        </div>
-        <div className="bg-white p-4 rounded shadow">
-          <p>Soil Moisture</p>
-          <p className="text-2xl">{sensorData.SensorData.moisturePercent}%</p>
-        </div>
-      </div>
-
-      {/* Device Status */}
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="font-semibold mb-2">Device Status</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p>Water Pump: {sensorData.controls.water_pump ? 'ON' : 'OFF'}</p>
-            <p>Light: {sensorData.controls.light ? 'ON' : 'OFF'}</p>
+    <div className="grid gap-4 md:grid-cols-2">
+      {/* Brightness Card */}
+      <Card>
+        <h3 className="text-lg font-semibold">Brightness</h3>
+        <div className="mt-2">
+          <div className="h-4 w-full bg-gray-200 rounded-full">
+            <div
+              className="h-4 bg-yellow-400 rounded-full"
+              style={{ width: `${brightnessPercent}%` }}
+            ></div>
           </div>
-          <div>
-            <p>Fan: {sensorData.controls.fan ? 'ON' : 'OFF'}</p>
-            <p>Flame: {sensorData.SensorData.flameDetected ? 'DETECTED' : 'SAFE'}</p>
-          </div>
+          <p className="mt-1 text-sm">{brightnessPercent}%</p>
         </div>
-      </div>
+      </Card>
+
+      {/* Water Level Card */}
+      <Card>
+        <h3 className="text-lg font-semibold">Water Level</h3>
+        <div className="mt-2">
+          <div className="h-4 w-full bg-gray-200 rounded-full">
+            <div
+              className={`h-4 rounded-full ${waterPercent <= 20 ? "bg-red-500" : "bg-blue-500"}`}
+              style={{ width: `${waterPercent}%` }}
+            ></div>
+          </div>
+          <p className="mt-1 text-sm">{waterPercent}%</p>
+          {isWaterShortage && (
+            <Alert variant="destructive" className="mt-2">
+              Water Shortage Alert!
+            </Alert>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }
