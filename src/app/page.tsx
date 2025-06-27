@@ -36,7 +36,7 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
     case 'waterLevel':
       return `${value}%`;
     case 'ldrBrightness':
-      return value > 500 ? 'Bright' : 'Dim'; 
+      return typeof value === 'number' && value > 500 ? 'Bright' : 'Dim'; 
     case 'flameDetected':
       return value ? 'Detected' : 'Safe';
     case 'waterShortage':
@@ -47,7 +47,7 @@ const getEmojiStatus = (key: keyof SensorReadings, value: number | boolean, sens
 };
 
 export default function HomePage() {
-  const { appData, loading, error, updateLightStatus } = useFirebaseData();
+  const { appData, loading, updateLightStatus } = useFirebaseData();
   const [alerts, setAlerts] = useState<AlertContent[]>([]);
   const [isUpdatingLightLDR, setIsUpdatingLightLDR] = useState(false);
 
@@ -97,7 +97,8 @@ export default function HomePage() {
   const handleLDRLightStatusChange = async (newStatus: LightStatus) => {
     setIsUpdatingLightLDR(true);
     try {
-      await updateLightStatus('lightLDR', newStatus);
+      // Assuming updateLightStatus expects a boolean: true for 'on', false for 'off', and maybe true for 'auto'
+      await updateLightStatus(newStatus === 'on' || newStatus === 'auto');
     } catch (err) {
       console.error('Failed to update lightLDR', err);
     } finally {
@@ -114,7 +115,7 @@ export default function HomePage() {
     );
   }
 
-  if (error || !appData) {
+  if (!appData) {
     return (
       <Card className="m-auto mt-10 max-w-md border-destructive">
         <CardHeader>
@@ -124,7 +125,6 @@ export default function HomePage() {
         </CardHeader>
         <CardContent>
           <p>Could not load dashboard data. Please check your connection or try again later.</p>
-          {error && <p className="text-sm text-muted-foreground mt-2">{error.message}</p>}
         </CardContent>
       </Card>
     );

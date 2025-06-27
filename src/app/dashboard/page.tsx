@@ -4,7 +4,8 @@ import { useContext } from "react";
 import { FirebaseDataContext } from "@/contexts/FirebaseDataContext";
 import { Alert } from "@/components/ui/alert";
 export default function Dashboard() {
-  const { sensorData } = useContext(FirebaseDataContext);
+  const context = useContext(FirebaseDataContext);
+  const sensorData = context?.sensorData ?? { brightness: 0, waterLevel: 0 };
 
   // Normalize brightness (0-255 → 0-100%)
   const brightnessPercent = Math.min(100, Math.round((sensorData.brightness / 255) * 100));

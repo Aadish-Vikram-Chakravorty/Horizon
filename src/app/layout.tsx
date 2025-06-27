@@ -3,7 +3,7 @@ import { Inter as FontSans } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseProvider } from '@/contexts/FirebaseDataContext';
+import { FirebaseDataContextProvider } from '@/contexts/FirebaseDataContext';
 import { SensorProvider } from '@/contexts/SensorContext'; // Add this import
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -37,12 +37,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseProvider>
+          <FirebaseDataContextProvider>
             <SensorProvider> {/* Wrap with SensorProvider */}
               <AppLayout>{children}</AppLayout>
               <Toaster />
             </SensorProvider>
-          </FirebaseProvider>
+          </FirebaseDataContextProvider>
         </ThemeProvider>
       </body>
     </html>
